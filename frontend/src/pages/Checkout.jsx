@@ -102,7 +102,7 @@ const Checkout = () => {
         shippingAddress: shippingData
       };
 
-      const response = await axios.post('http://localhost:5000/api/orders', orderPayload, {
+      const response = await axios.post('https://arpancart.onrender.com/api/orders', orderPayload, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

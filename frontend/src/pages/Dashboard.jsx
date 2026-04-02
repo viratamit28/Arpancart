@@ -20,7 +20,7 @@ const Dashboard = () => {
     // 2. Fetch Data: Backend API se purane orders laao
     const fetchMyOrders = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/orders/my-orders', {
+        const response = await axios.get('https://arpancart.onrender.com/api/orders/my-orders', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setOrders(response.data.data);

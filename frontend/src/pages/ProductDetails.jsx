@@ -19,7 +19,7 @@ const ProductDetails = () => {
     const fetchSingleProduct = async () => {
       try {
         // Hum saare products laa kar usme se ID match kar lenge (Safe approach)
-        const response = await axios.get('http://localhost:5000/api/products');
+        const response = await axios.get('https://arpancart.onrender.com/api/products');
         const allProducts = response.data.data;
         // String to Number convert karna zaroori hai ID match karne ke liye
         const foundProduct = allProducts.find(p => p.id === parseInt(id));

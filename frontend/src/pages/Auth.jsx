@@ -26,8 +26,8 @@ const Auth = () => {
     setError(null);
 
     const url = isLogin 
-      ? 'http://localhost:5000/api/auth/login' 
-      : 'http://localhost:5000/api/auth/register';
+      ? 'https://arpancart.onrender.com/api/auth/login' 
+      : 'https://arpancart.onrender.com/api/auth/register';
 
     try {
       const response = await axios.post(url, formData);
