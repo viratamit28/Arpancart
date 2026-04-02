@@ -1,0 +1,64 @@
+// 1. Connection define kar rahe hain
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql" // Hum MySQL use kar rahe hain
+  url      = env("DATABASE_URL")
+}
+
+// 2. User Table (Jaise Mongoose me User Schema hota hai)
+model User {
+  id        Int      @id @default(autoincrement()) // SQL me auto-increment ID hoti hai
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("customer")
+  createdAt DateTime @default(now())
+  
+  // Ek user ke multiple orders ho sakte hain (Relation)
+  orders    Order[]
+}
+
+// 3. Product Table
+model Product {
+  id              Int      @id @default(autoincrement())
+  title           String
+  description     String   @db.Text
+  price           Float
+  discountedPrice Float?   // '?' ka matlab optional hai
+  category        String
+  imageUrl        String
+  stockQuantity   Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  // Ek product multiple order items me ho sakta hai
+  orderItems      OrderItem[]
+}
+
+// 4. Order Table
+model Order {
+  id            Int      @id @default(autoincrement())
+  userId        Int      // Kis user ne order kiya
+  totalAmount   Float
+  status        String   @default("Pending") // Pending, Shipped, Delivered
+  createdAt     DateTime @default(now())
+
+  // Relations
+  user          User        @relation(fields: [userId], references: [id])
+  items         OrderItem[]
+}
+
+// 5. Order Item Table (Cart ke items order ke andar)
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  quantity  Int
+  price     Float
+
+  // Relations
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
