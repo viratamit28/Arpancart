@@ -26,7 +26,6 @@ app.get('/api/products', async (req, res) => {
 app.get('/api/seed-products', async (req, res) => {
   try {
     const poodaKitsData = [
-      // ... (Tumhara seed data same rakha hai) ...
       { title: "Essential Pooja Samagri Kit (Hawan Set)", description: "A comprehensive set for daily rituals. Includes Haldi-Chandan, Akshat, Supari, Kalava, Kali Sarson, and other essential hawan items.", price: 499.00, category: "Pooja Kits", imageUrl: "https://placehold.co/600x400/ea580c/fff?text=Detailed+Hawan+Samagri", stockQuantity: 20 },
       { title: "Saraswati Pooja Kit", description: "A specially curated kit for performing Saraswati Pooja. Contains Haldi Powder, Kumkum, Akshat, Bambooless Agarbatti, and a Maa Saraswati photo card.", price: 599.00, category: "Pooja Kits", imageUrl: "https://placehold.co/600x400/ea580c/fff?text=Saraswati+Pooja+Materials", stockQuantity: 15 },
       { title: "Complete Satyanarayan Pooja Kit", description: "Everything you need for a traditional Satyanarayan Pooja. Includes Akshat, Ashtagandha, Laung, Chandan Jal, and a Satyanarayan Bhagwan photo.", price: 899.00, category: "Pooja Kits", imageUrl: "https://placehold.co/600x400/ea580c/fff?text=Satyanarayan+Pooja+Set", stockQuantity: 10 },
@@ -105,7 +104,6 @@ app.post('/api/orders', verifyToken, async (req, res) => {
         totalAmount: totalAmount,
         status: "Processing",
         items: {
-          // Senior Dev Fix: Frontend 'product' bhejta hai (ID), pehle yahan item.id tha jo undefined ho jata.
           create: items.map(item => ({
             productId: item.product || item.id, 
             quantity: item.quantity,
@@ -136,7 +134,38 @@ app.get('/api/orders/my-orders', verifyToken, async (req, res) => {
 });
 
 // ==========================================
-// 📧 5. CONTACT API (YAHAN HAI TUMHARA SOLUTION)
+// 🚀 4.5 TRACK ORDER API (NAYA ADD KIYA HAI)
+// ==========================================
+app.get('/api/orders/track/:orderId', async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId);
+    
+    if (isNaN(orderId)) {
+      return res.status(400).json({ success: false, message: "Invalid Order ID format. Please use numbers." });
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { 
+        items: { 
+          include: { product: true } 
+        } 
+      }
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found. Please verify the ID." });
+    }
+
+    res.json({ success: true, data: order });
+  } catch (error) {
+    console.error("Tracking error:", error);
+    res.status(500).json({ success: false, message: "Server error while tracking order." });
+  }
+});
+
+// ==========================================
+// 📧 5. CONTACT API
 // ==========================================
 app.post('/api/contact', async (req, res) => {
   try {
@@ -146,7 +175,6 @@ app.post('/api/contact', async (req, res) => {
       return res.status(400).json({ success: false, message: "Please fill all fields." });
     }
 
-    // Prisma me data save kar rahe hain
     const newContact = await prisma.contact.create({
       data: {
         name,
@@ -162,7 +190,6 @@ app.post('/api/contact', async (req, res) => {
     res.status(500).json({ success: false, message: "Server error, please try again later.", error: error.message });
   }
 });
-
 
 // Server Start
 const PORT = process.env.PORT || 5000;

@@ -144,8 +144,8 @@ const Footer = () => {
                 <HeadphonesIcon className="w-5 h-5 mr-3 text-[#f7941d] flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Customer Care</p>
-                  <a href="mailto:aarpancart@gmail.com" className="hover:text-[#f7941d] transition-colors font-medium break-all">
-                    aarpancart@gmail.com
+                  <a href="mailto:arpancart@gmail.com" className="hover:text-[#f7941d] transition-colors font-medium break-all">
+                    arpancart@gmail.com
                   </a>
                 </div>
               </li>
@@ -183,10 +183,9 @@ const Footer = () => {
             © {new Date().getFullYear()} Arpan Cart. All Rights Reserved.
           </p>
           <p className="text-sm text-gray-500 flex items-center justify-center gap-1 font-medium">
-            Made with <Heart className="w-4 h-4 text-red-500 fill-current" /> by Amit Virat
+            Made with <Heart className="w-4 h-4 text-red-500 fill-current" /> by Ryax  Digital Technologies
           </p>
         </div>
-
       </div>
     </footer>
   );

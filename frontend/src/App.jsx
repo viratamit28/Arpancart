@@ -6,6 +6,8 @@ import Home from './pages/Home';
 import Shop from './pages/Shop'; 
 import ProductDetails from './pages/ProductDetails';
 import Subscriptions from './pages/Subscriptions';
+import TrackOrder from './pages/TrackOrder';
+import Privacy from './pages/Privacy';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Cart from './pages/Cart';
@@ -25,8 +27,11 @@ function App() {
             <Route path="/shop" element={<Shop />} /> 
             <Route path="/product/:id" element={<ProductDetails />} />
             <Route path="/subscriptions" element={<Subscriptions />} />
+            <Route path="/track-order" element={<TrackOrder />} />
+<Route path="/privacy" element={<Privacy />} /> 
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+
             <Route path="/cart" element={<Cart />} />
             <Route path="/login" element={<Auth />} />
             <Route path="/checkout" element={<Checkout />} />

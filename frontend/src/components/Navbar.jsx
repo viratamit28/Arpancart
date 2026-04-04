@@ -1,67 +1,99 @@
-import React, { useContext } from 'react';
-import { Search, ShoppingCart, User, LogOut, Phone, Mail } from 'lucide-react'; 
+import React, { useContext, useState } from 'react';
+import { Search, ShoppingCart, User, LogOut, Phone, Mail, Menu, X } from 'lucide-react'; 
 import logo from '../assets/logo.png'; 
 import { CartContext } from '../context/CartContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
   const { cartCount } = useContext(CartContext);
   const navigate = useNavigate();
+  const location = useLocation();
   const token = localStorage.getItem('token'); 
+  
+  // State for mobile menu
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // State for search input
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleLogout = () => {
     localStorage.removeItem('token'); 
     navigate('/login'); 
+    setIsMobileMenuOpen(false); // Close menu on logout
   };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // Redirect to shop page with search query parameter
+      navigate(`/shop?search=${encodeURIComponent(searchQuery)}`);
+      setSearchQuery(''); // Clear input
+      setIsMobileMenuOpen(false); // Close menu if open
+    }
+  };
+
+  // Helper to check if link is active
+  const isActive = (path) => location.pathname === path;
 
   return (
     <header className="sticky top-0 z-50 shadow-sm w-full">
       
       {/* =========================================
-          TOP BAR (Blueprint exactly jaisa Dark Maroon)
+          TOP BAR 
       ========================================= */}
       <div className="bg-[#8b1818] text-white py-1.5 px-4 md:px-8 text-xs font-medium flex justify-between items-center hidden md:flex">
         <div className="flex gap-6">
-          <span className="flex items-center gap-1.5"><Phone className="w-3 h-3" /> +91 98765 43210</span>
-          <span className="flex items-center gap-1.5"><Mail className="w-3 h-3" /> support@poojastore.com</span>
+          <span className="flex items-center gap-1.5"><Phone className="w-3 h-3" /> +91 91231 87724</span>
+          <span className="flex items-center gap-1.5"><Mail className="w-3 h-3" /> arpancart@gmail.com</span>
         </div>
         <div>
           <span>Free Shipping on Orders above ₹999 | 100% Authentic Samagri</span>
         </div>
       </div>
 
-      {/* Main Navbar Background (Cream to match Hero Section) */}
       <div className="bg-[#fcfaf5]">
         
         {/* =========================================
-            ROW 1: LOGO, SEARCH, ICONS & AUTH BUTTON
+            ROW 1: LOGO, SEARCH, ICONS
         ========================================= */}
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex justify-between items-center gap-4 border-b border-[#8b1818]/10 md:border-none">
           
-          {/* 1. Logo */}
-          <Link to="/" className="flex-shrink-0">
-            <img src={logo} alt="Pooja Store Logo" className="h-10 md:h-14 w-auto object-contain" />
+          {/* Mobile Menu Toggle */}
+          <button 
+            className="md:hidden text-[#8b1818]"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+
+          {/* Logo */}
+          <Link to="/" className="flex-shrink-0" onClick={() => setIsMobileMenuOpen(false)}>
+            <img src={logo} alt="Arpan Cart Logo" className="h-10 md:h-14 w-auto object-contain" />
           </Link>
 
-          {/* 2. Search Bar (Theme matched border) */}
-          <div className="hidden md:flex flex-grow max-w-xl mx-4 items-center bg-white border border-orange-200 rounded-md px-3 py-2 focus-within:border-[#f7941d] focus-within:ring-1 focus-within:ring-[#f7941d] transition-all shadow-sm">
+          {/* Desktop Search Bar */}
+          <form 
+            onSubmit={handleSearchSubmit}
+            className="hidden md:flex flex-grow max-w-xl mx-4 items-center bg-white border border-orange-200 rounded-md px-3 py-2 focus-within:border-[#f7941d] focus-within:ring-1 focus-within:ring-[#f7941d] transition-all shadow-sm"
+          >
             <input 
               type="text" 
               placeholder="Search Pooja Samagri..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full outline-none text-sm bg-transparent text-gray-700 placeholder-gray-400" 
             />
-            <Search className="text-[#8b1818] w-5 h-5 cursor-pointer hover:text-[#f7941d] transition-colors ml-2" />
-          </div>
+            <button type="submit" className="text-[#8b1818] hover:text-[#f7941d] transition-colors ml-2 focus:outline-none">
+              <Search className="w-5 h-5" />
+            </button>
+          </form>
 
-          {/* 3. Right Side Icons & Auth Button */}
+          {/* Right Side Icons & Auth Button */}
           <div className="flex items-center gap-5 md:gap-6">
             
-            {/* User Icon */}
             <Link to={token ? "/dashboard" : "/login"} className="text-[#8b1818] hover:text-[#f7941d] transition-colors">
               <User className="w-6 h-6" />
             </Link>
             
-            {/* Cart Icon (Orange Badge) */}
             <Link to="/cart" className="relative text-[#8b1818] hover:text-[#f7941d] transition-colors">
               <ShoppingCart className="w-6 h-6" />
               {cartCount > 0 && (
@@ -71,7 +103,7 @@ const Navbar = () => {
               )}
             </Link>
 
-            {/* Login / Logout Button (Blueprint Solid Orange Button) */}
+            {/* Desktop Auth Button */}
             {token ? (
               <button 
                 onClick={handleLogout} 
@@ -91,15 +123,67 @@ const Navbar = () => {
         </div>
 
         {/* =========================================
-            ROW 2: NAVIGATION LINKS (Bottom Row)
+            MOBILE MENU (Conditional Rendering)
+        ========================================= */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden bg-[#fcfaf5] border-t border-[#8b1818]/10 px-4 py-4 space-y-4">
+             {/* Mobile Search */}
+             <form 
+              onSubmit={handleSearchSubmit}
+              className="flex items-center bg-white border border-orange-200 rounded-md px-3 py-2 mb-4"
+            >
+              <input 
+                type="text" 
+                placeholder="Search..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full outline-none text-sm bg-transparent text-gray-700" 
+              />
+              <button type="submit" className="text-[#8b1818] ml-2">
+                <Search className="w-5 h-5" />
+              </button>
+            </form>
+
+            <div className="flex flex-col gap-3 font-bold text-gray-700 uppercase tracking-wide text-sm">
+              <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className={`${isActive('/') ? 'text-[#c21820]' : 'hover:text-[#c21820]'}`}>Home</Link>
+              <Link to="/shop" onClick={() => setIsMobileMenuOpen(false)} className={`${isActive('/shop') ? 'text-[#c21820]' : 'hover:text-[#c21820]'}`}>Shop</Link>
+              <Link to="/subscriptions" onClick={() => setIsMobileMenuOpen(false)} className={`${isActive('/subscriptions') ? 'text-[#c21820]' : 'hover:text-[#c21820]'}`}>Subscriptions</Link>
+              <Link to="/about" onClick={() => setIsMobileMenuOpen(false)} className={`${isActive('/about') ? 'text-[#c21820]' : 'hover:text-[#c21820]'}`}>About Us</Link>
+              <Link to="/contact" onClick={() => setIsMobileMenuOpen(false)} className={`${isActive('/contact') ? 'text-[#c21820]' : 'hover:text-[#c21820]'}`}>Contact</Link>
+            </div>
+            
+             {/* Mobile Auth Button */}
+             <div className="pt-4 border-t border-[#8b1818]/10">
+              {token ? (
+                <button 
+                  onClick={handleLogout} 
+                  className="w-full flex items-center justify-center gap-2 bg-[#8b1818] text-white px-5 py-2.5 rounded font-bold text-sm"
+                >
+                  <LogOut className="w-4 h-4" /> Logout
+                </button>
+              ) : (
+                <Link 
+                  to="/login" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full flex justify-center bg-[#f7941d] text-white px-6 py-2.5 rounded font-bold text-sm"
+                >
+                  Login
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* =========================================
+            ROW 2: DESKTOP NAVIGATION LINKS 
         ========================================= */}
         <div className="hidden md:flex border-t border-[#8b1818]/10 bg-[#fcfaf5]">
           <div className="max-w-7xl mx-auto px-4 md:px-8 py-3 flex gap-8 text-[15px] font-bold text-gray-700 uppercase tracking-wide">
-            <Link to="/" className="hover:text-[#c21820] transition-colors">Home</Link>
-            <Link to="/shop" className="hover:text-[#c21820] transition-colors">Shop</Link>
-            <Link to="/subscriptions" className="hover:text-[#c21820] transition-colors">Subscriptions</Link>
-            <Link to="/about" className="hover:text-[#c21820] transition-colors">About Us</Link>
-            <Link to="/contact" className="hover:text-[#c21820] transition-colors">Contact</Link>
+            <Link to="/" className={`${isActive('/') ? 'text-[#c21820]' : 'hover:text-[#c21820]'} transition-colors`}>Home</Link>
+            <Link to="/shop" className={`${isActive('/shop') ? 'text-[#c21820]' : 'hover:text-[#c21820]'} transition-colors`}>Shop</Link>
+            <Link to="/subscriptions" className={`${isActive('/subscriptions') ? 'text-[#c21820]' : 'hover:text-[#c21820]'} transition-colors`}>Subscriptions</Link>
+            <Link to="/about" className={`${isActive('/about') ? 'text-[#c21820]' : 'hover:text-[#c21820]'} transition-colors`}>About Us</Link>
+            <Link to="/contact" className={`${isActive('/contact') ? 'text-[#c21820]' : 'hover:text-[#c21820]'} transition-colors`}>Contact</Link>
           </div>
         </div>
         
