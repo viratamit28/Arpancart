@@ -39,15 +39,15 @@ model Product {
 
 // 4. Order Table
 model Order {
-  id            Int      @id @default(autoincrement())
-  userId        Int      // Kis user ne order kiya
-  totalAmount   Float
-  status        String   @default("Pending") // Pending, Shipped, Delivered
-  createdAt     DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  userId      Int      // Kis user ne order kiya
+  totalAmount Float
+  status      String   @default("Pending") // Pending, Shipped, Delivered
+  createdAt   DateTime @default(now())
 
   // Relations
-  user          User        @relation(fields: [userId], references: [id])
-  items         OrderItem[]
+  user        User        @relation(fields: [userId], references: [id])
+  items       OrderItem[]
 }
 
 // 5. Order Item Table (Cart ke items order ke andar)
@@ -61,4 +61,16 @@ model OrderItem {
   // Relations
   order     Order   @relation(fields: [orderId], references: [id])
   product   Product @relation(fields: [productId], references: [id])
+}
+
+// ==========================================
+// 📧 6. CONTACT TABLE (Yeh Naya Add Kiya Hai)
+// ==========================================
+model Contact {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  subject   String
+  message   String   @db.Text  // Lamba message store karne ke liye
+  createdAt DateTime @default(now())
 }
