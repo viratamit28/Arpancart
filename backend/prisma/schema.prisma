@@ -17,8 +17,28 @@ model User {
   role      String   @default("customer")
   createdAt DateTime @default(now())
   
-  // Ek user ke multiple orders ho sakte hain (Relation)
+  // Relations
   orders    Order[]
+  addresses Address[] // 🚨 YAHAN NAYA RELATION ADD KIYA HAI
+}
+
+// ==========================================
+// 🏠 2.5 ADDRESS TABLE (Yeh Naya Add Kiya Hai)
+// ==========================================
+model Address {
+  id          Int      @id @default(autoincrement())
+  userId      Int      // Kis user ka address hai
+  fullName    String
+  phone       String
+  street      String
+  city        String
+  state       String
+  pincode     String
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  // Relation
+  user        User     @relation(fields: [userId], references: [id])
 }
 
 // 3. Product Table
@@ -64,7 +84,7 @@ model OrderItem {
 }
 
 // ==========================================
-// 📧 6. CONTACT TABLE (Yeh Naya Add Kiya Hai)
+// 📧 6. CONTACT TABLE
 // ==========================================
 model Contact {
   id        Int      @id @default(autoincrement())

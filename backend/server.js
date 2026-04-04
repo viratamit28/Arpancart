@@ -93,26 +93,35 @@ const verifyToken = (req, res, next) => {
 };
 
 // ==========================================
-// 📦 4. ORDER APIs
+// 📦 4. ORDER APIs (🚨 YAHAN FIX KIYA HAI)
 // ==========================================
 app.post('/api/orders', verifyToken, async (req, res) => {
   try {
     const { items, totalAmount } = req.body; 
+
+    if (!items || items.length === 0) {
+      return res.status(400).json({ success: false, message: "Cart is empty." });
+    }
+
     const newOrder = await prisma.order.create({
       data: {
         userId: req.user.userId,
-        totalAmount: totalAmount,
+        totalAmount: parseFloat(totalAmount), // 🔥 String ko Float banaya
         status: "Processing",
         items: {
-          create: items.map(item => ({
-            productId: item.product || item.id, 
-            quantity: item.quantity,
-            price: item.price
-          }))
+          create: items.map(item => {
+            const pId = item.product?.id || item.product || item.id || item._id;
+            return {
+              productId: parseInt(pId), // 🔥 String ko Int banaya
+              quantity: parseInt(item.quantity || 1),
+              price: parseFloat(item.price || item.discountedPrice)
+            };
+          })
         }
       },
       include: { items: true }
     });
+
     res.status(201).json({ success: true, message: "Order successfully place ho gaya! 🎉", orderId: newOrder.id });
   } catch (error) {
     console.error("Order creation error:", error);
@@ -134,7 +143,7 @@ app.get('/api/orders/my-orders', verifyToken, async (req, res) => {
 });
 
 // ==========================================
-// 🚀 4.5 TRACK ORDER API (NAYA ADD KIYA HAI)
+// 🚀 4.5 TRACK ORDER API
 // ==========================================
 app.get('/api/orders/track/:orderId', async (req, res) => {
   try {
@@ -188,6 +197,50 @@ app.post('/api/contact', async (req, res) => {
   } catch (error) {
     console.error("Contact form error:", error);
     res.status(500).json({ success: false, message: "Server error, please try again later.", error: error.message });
+  }
+});
+
+// ==========================================
+// 🏠 6. ADDRESS APIs
+// ==========================================
+app.post('/api/addresses', verifyToken, async (req, res) => {
+  try {
+    const { fullName, phone, street, city, state, pincode, isDefault } = req.body;
+
+    if (!fullName || !phone || !street || !city || !state || !pincode) {
+      return res.status(400).json({ success: false, message: "Please fill all the address fields." });
+    }
+
+    const newAddress = await prisma.address.create({
+      data: {
+        userId: req.user.userId,
+        fullName,
+        phone,
+        street,
+        city,
+        state,
+        pincode,
+        isDefault: isDefault || false
+      }
+    });
+
+    res.status(201).json({ success: true, message: "Address saved successfully!", data: newAddress });
+  } catch (error) {
+    console.error("Address save error:", error);
+    res.status(500).json({ success: false, message: "Failed to save address.", error: error.message });
+  }
+});
+
+app.get('/api/addresses', verifyToken, async (req, res) => {
+  try {
+    const addresses = await prisma.address.findMany({
+      where: { userId: req.user.userId },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ success: true, data: addresses });
+  } catch (error) {
+    console.error("Address fetch error:", error);
+    res.status(500).json({ success: false, message: "Failed to load addresses." });
   }
 });
 
