@@ -41,7 +41,7 @@ const ProductCard = ({ product }) => {
       <Link to={`/product/${product.id || product._id}`} className="relative w-full h-56 overflow-hidden rounded-t-sm bg-[#fffbf4] block cursor-pointer">
         <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors z-10"></div>
         <img 
-          src={product.imageUrl || "https://dummyimage.com/300x300/fcfaf5/8b1818.jpg&text=Pooja+Item"} 
+          src={product.imageUrl || "https://www.pexels.com/photo/close-up-photo-of-puja-thali-set-7686352/"} 
           alt={product.title || product.name} 
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
         />
