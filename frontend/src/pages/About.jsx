@@ -129,9 +129,7 @@ const About = () => {
             We proudly offer delivery within minutes in Patna, ensuring that your puja is never delayed — even at the last moment. Whether it’s a planned ritual or a sudden requirement, we are always ready to serve you.
           </p>
           <div className="flex flex-wrap justify-center gap-6">
-            <div className="bg-white/10 backdrop-blur-sm px-8 py-3.5 rounded-sm flex items-center gap-3 border border-white/20 font-bold uppercase tracking-wider text-sm shadow-sm">
-              <Clock className="w-5 h-5 text-[#f7941d]" /> 24x7 Availability
-            </div>
+            
             <div className="bg-white/10 backdrop-blur-sm px-8 py-3.5 rounded-sm flex items-center gap-3 border border-white/20 font-bold uppercase tracking-wider text-sm shadow-sm">
               <Truck className="w-5 h-5 text-[#f7941d]" /> Delivery in Minutes
             </div>

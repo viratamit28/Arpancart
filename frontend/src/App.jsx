@@ -16,6 +16,8 @@ import Cart from './pages/Cart';
 import Auth from './pages/Auth';
 import Checkout from './pages/Checkout';
 import Dashboard from './pages/Dashboard';
+import Terms from './pages/Terms';
+import Return from './pages/Return';
 
 function App() {
   return (
@@ -46,6 +48,8 @@ function App() {
             <Route path="/login" element={<Auth />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/terms" element={<Terms />} />
+<Route path="/return" element={<Return />} />
           </Routes>
         </main>
 
