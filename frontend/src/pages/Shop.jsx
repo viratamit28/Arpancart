@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import TrendingBanner from '../components/TrendingBanner';
 import { SlidersHorizontal, Search, X, ChevronRight, Sparkles } from 'lucide-react';
-
 
 const Shop = () => {
   const [allProducts, setAllProducts] = useState([]);
@@ -19,10 +18,12 @@ const Shop = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // URL Query ke liye (Navbar se search karne par yahan aayega)
+  // ✅ FIX 1: Hash (#) hata kar URL Query (?) ka use kiya
   const location = useLocation();
+  const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
   const searchQuery = searchParams.get('search') || '';
+  const urlCategory = searchParams.get('category'); 
 
   // 1. Fetch Products
   useEffect(() => {
@@ -39,8 +40,8 @@ const Shop = () => {
 
         setAllProducts(productsArray); 
         
-        // Extract unique categories
-        const uniqueCategories = ['All', ...new Set(productsArray.map(p => p.category).filter(Boolean))];
+        // Database se aane wale category naam ka space hatana (.trim())
+        const uniqueCategories = ['All', ...new Set(productsArray.map(p => p.category ? p.category.trim() : '').filter(Boolean))];
         setCategories(uniqueCategories);
 
         setLoading(false);
@@ -54,18 +55,16 @@ const Shop = () => {
     fetchAllProducts();
   }, []);
 
-  // 2. Hash scroll check (Agar Homepage se direct category click ki hai)
+  // 2. ✅ FIX 2: URL track karo aur active tab set karo (Bina DB ka wait kiye)
   useEffect(() => {
-    const hash = window.location.hash;
-    if (hash && categories.length > 0) {
-      const categoryFromHash = decodeURIComponent(hash.substring(1));
-      if (categories.includes(categoryFromHash)) {
-        setSelectedCategory(categoryFromHash);
-      }
+    if (urlCategory) {
+      setSelectedCategory(urlCategory);
+    } else {
+      setSelectedCategory('All');
     }
-  }, [categories]);
+  }, [urlCategory]);
 
-  // 3. Apply Filters & Sorting dynamically
+  // 3. ✅ FIX 3: Smart Filtering (Ignore "Kit", spaces, and cases)
   useEffect(() => {
     let result = [...allProducts];
 
@@ -78,9 +77,17 @@ const Shop = () => {
       );
     }
 
-    // Apply Category Filter
+    // Apply Category Filter (Sahi tarike se match karna)
     if (selectedCategory !== 'All') {
-      result = result.filter(p => p.category === selectedCategory);
+      result = result.filter(p => {
+        if (!p.category) return false;
+        
+        const dbCategory = p.category.toLowerCase().trim();
+        const targetCategory = selectedCategory.toLowerCase().trim();
+        
+        // Agar "Navratri Puja" aur "Navratri Puja Kit" hai, tab bhi match ho jayega!
+        return dbCategory.includes(targetCategory) || targetCategory.includes(dbCategory);
+      });
     }
 
     // Apply Sorting
@@ -93,6 +100,14 @@ const Shop = () => {
     setFilteredProducts(result);
   }, [allProducts, searchQuery, selectedCategory, sortBy]);
 
+  // ✅ FIX 4: Sidebar click handler jo URL sahi update karega
+  const handleSidebarCategoryClick = (cat) => {
+    if (cat === 'All') {
+      navigate('/shop');
+    } else {
+      navigate(`/shop?category=${encodeURIComponent(cat)}`);
+    }
+  };
 
   return (
     <div className="py-12 px-4 md:px-8 lg:px-12 bg-[#fcfaf5] min-h-screen">
@@ -111,9 +126,6 @@ const Shop = () => {
 
       <div className="max-w-[1400px] mx-auto">
         
-        {/* =========================================
-            HEADER & SEARCH INDICATOR
-        ========================================= */}
         <div className="mb-10 animate-fade-up">
           <div className="flex items-center gap-3 text-[#8b1818] mb-2">
             <Sparkles className="w-6 h-6 text-[#f7941d]" />
@@ -123,7 +135,6 @@ const Shop = () => {
           </div>
           <p className="text-gray-600 font-medium">Explore pure and authentic items for your spiritual rituals.</p>
           
-          {/* Agar search active hai toh banner dikhao */}
           {searchQuery && (
             <div className="mt-4 inline-flex items-center gap-2 bg-orange-50 border border-orange-200 text-[#8b1818] px-4 py-2 rounded-sm font-bold shadow-sm">
               <Search className="w-4 h-4" />
@@ -134,9 +145,6 @@ const Shop = () => {
 
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           
-          {/* =========================================
-              LEFT SIDEBAR (FILTERS)
-          ========================================= */}
           <div className="w-full lg:w-1/4 flex flex-col gap-6 sticky top-24 z-10 animate-fade-up">
             
             <div className="bg-white p-6 rounded-sm shadow-sm border border-orange-50">
@@ -145,29 +153,28 @@ const Shop = () => {
                 <h2 className="text-xl font-extrabold text-gray-800 uppercase tracking-wide">Filters</h2>
               </div>
 
-              {/* Categories */}
               <div className="mb-6">
                 <h3 className="font-bold text-[#8b1818] mb-4 uppercase text-sm tracking-wider">Categories</h3>
                 <div className="flex flex-col gap-2">
-                  {categories.map((cat, index) => (
+                  {/* Jab tak API se categories na aayein, tab tak clicked category zaroor dikhao */}
+                  {(categories.length > 0 ? categories : ['All', selectedCategory !== 'All' ? selectedCategory : null].filter(Boolean)).map((cat, index) => (
                     <button
                       key={index}
-                      onClick={() => setSelectedCategory(cat)}
+                      onClick={() => handleSidebarCategoryClick(cat)}
                       className={`flex items-center justify-between text-left px-3 py-2.5 rounded-sm font-medium transition-all duration-300 border-l-[3px] ${
-                        selectedCategory === cat 
+                        selectedCategory.toLowerCase() === cat.toLowerCase()
                           ? 'bg-orange-50 border-[#f7941d] text-[#8b1818] font-bold' 
                           : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-[#8b1818]'
                       }`}
                     >
                       {cat}
-                      {selectedCategory === cat && <ChevronRight className="w-4 h-4 text-[#f7941d]" />}
+                      {selectedCategory.toLowerCase() === cat.toLowerCase() && <ChevronRight className="w-4 h-4 text-[#f7941d]" />}
                     </button>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* Support Box in Sidebar */}
             <div className="bg-gradient-to-br from-[#8b1818] to-[#6e1313] p-6 rounded-sm shadow-md text-white">
               <h3 className="font-extrabold text-lg mb-2">Need Help?</h3>
               <p className="text-sm text-white/80 mb-4">Can't find what you are looking for? Contact our support.</p>
@@ -178,12 +185,8 @@ const Shop = () => {
 
           </div>
 
-          {/* =========================================
-              RIGHT SIDE (PRODUCTS GRID & SORT)
-          ========================================= */}
           <div className="w-full lg:w-3/4 animate-fade-up">
             
-            {/* Top Toolbar (Item Count & Sort) */}
             <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-sm shadow-sm border border-orange-50 mb-6 gap-4">
               <div className="font-bold text-gray-600">
                 Showing <span className="text-[#8b1818]">{filteredProducts.length}</span> products
@@ -203,7 +206,6 @@ const Shop = () => {
               </div>
             </div>
 
-            {/* LOADING STATE */}
             {loading && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3, 4, 5, 6].map((n) => (
@@ -219,23 +221,21 @@ const Shop = () => {
               </div>
             )}
 
-            {/* ERROR STATE */}
             {error && (
               <div className="bg-red-50 text-red-600 font-bold p-6 rounded-sm border border-red-100 text-center">
                 {error}
               </div>
             )}
 
-            {/* EMPTY RESULTS STATE */}
             {!loading && !error && filteredProducts.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20 bg-white rounded-sm shadow-sm border border-orange-50 text-center">
                 <X className="w-16 h-16 text-gray-300 mb-4" />
                 <p className="text-gray-800 text-2xl font-extrabold mb-2">No items found</p>
                 <p className="text-gray-500 font-medium">
-                  {searchQuery ? `We couldn't find anything matching "${searchQuery}".` : "Try changing your category filters."}
+                  {searchQuery ? `We couldn't find anything matching "${searchQuery}".` : "This category is currently empty."}
                 </p>
                 <button 
-                  onClick={() => { setSelectedCategory('All'); window.location.href = '/shop'; }}
+                  onClick={() => navigate('/shop')}
                   className="mt-6 border-[2px] border-[#8b1818] text-[#8b1818] hover:bg-[#8b1818] hover:text-white font-bold py-2 px-6 rounded-sm transition-colors"
                 >
                   Clear All Filters
@@ -243,7 +243,6 @@ const Shop = () => {
               </div>
             )}
 
-            {/* PRODUCT GRID */}
             {!loading && !error && filteredProducts.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredProducts.map((product) => (
@@ -255,7 +254,7 @@ const Shop = () => {
           </div>
         </div>
 
-<TrendingBanner />
+        <TrendingBanner />
       </div>
     </div>
   );
