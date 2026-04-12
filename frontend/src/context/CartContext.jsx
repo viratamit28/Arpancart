@@ -1,31 +1,40 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 
 export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-  const [cartItems, setCartItems] = useState([]);
+  // ✅ FIX 1: Jab page load ho, toh pehle LocalStorage se purana data dhoondho
+  const [cartItems, setCartItems] = useState(() => {
+    try {
+      const savedCart = localStorage.getItem('arpanCartItems');
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch (error) {
+      console.error("Error reading cart from local storage", error);
+      return [];
+    }
+  });
   
-  // State for showing the navbar tooltip indicator
   const [showCartIndicator, setShowCartIndicator] = useState(false);
+
+  // ✅ FIX 2: Jab bhi cartItems update ho, usko turant LocalStorage mein save kar do
+  useEffect(() => {
+    localStorage.setItem('arpanCartItems', JSON.stringify(cartItems));
+  }, [cartItems]);
 
   // Function to add a product to the cart
   const addToCart = (product) => {
     setCartItems((prevItems) => {
-      // Check for both 'id' and '_id' to support different backend formats (like MongoDB)
       const productId = product.id || product._id;
       const existingItem = prevItems.find(item => (item.id || item._id) === productId);
       
       if (existingItem) {
-        // Increase quantity if item already exists
         return prevItems.map(item =>
           (item.id || item._id) === productId ? { ...item, quantity: item.quantity + 1 } : item
         );
       }
-      // Add new item with quantity 1
       return [...prevItems, { ...product, id: productId, quantity: 1 }];
     });
 
-    // Show indicator tooltip for 3 seconds
     setShowCartIndicator(true);
     setTimeout(() => {
       setShowCartIndicator(false);
@@ -35,7 +44,7 @@ export const CartProvider = ({ children }) => {
   // Function to handle + and - quantity buttons on the Cart page
   const updateQuantity = (id, newQuantity) => {
     if (newQuantity < 1) {
-      removeFromCart(id); // Remove item completely if quantity drops below 1
+      removeFromCart(id); 
       return;
     }
     setCartItems(
@@ -53,6 +62,8 @@ export const CartProvider = ({ children }) => {
   // Function to empty the entire cart (used after successful checkout)
   const clearCart = () => {
     setCartItems([]);
+    // Jab checkout ho jaye, toh local storage bhi saaf kar do
+    localStorage.removeItem('arpanCartItems');
   };
 
   // Calculate total number of items for the navbar badge
