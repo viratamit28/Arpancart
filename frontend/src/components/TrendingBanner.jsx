@@ -15,7 +15,7 @@ const TrendingBanner = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get('https://arpancart.onrender.com/api/products');
+        const response = await axios.get('https://arpancart-production.up.railway.app/api/products');
         
         let productsArray = [];
         if (Array.isArray(response.data)) {

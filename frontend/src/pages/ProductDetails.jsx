@@ -18,7 +18,7 @@ const ProductDetails = () => {
 
     const fetchSingleProduct = async () => {
       try {
-        const response = await axios.get('https://arpancart.onrender.com/api/products');
+        const response = await axios.get('https://arpancart-production.up.railway.app/api/products');
         const allProducts = response.data.data;
         
         const foundProduct = allProducts.find(p => p.id === parseInt(id));

@@ -102,7 +102,7 @@ const Checkout = () => {
         shippingAddress: shippingData
       };
 
-      const response = await axios.post('https://arpancart.onrender.com/api/orders', orderPayload, {
+      const response = await axios.post('https://arpancart-production.up.railway.app/api/orders', orderPayload, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

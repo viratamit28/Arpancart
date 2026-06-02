@@ -17,7 +17,7 @@ const TrackOrder = () => {
     
     try {
       // Asli Backend API call
-      const response = await axios.get(`https://arpancart.onrender.com/api/orders/track/${orderId}`);
+      const response = await axios.get(`https://arpancart-production.up.railway.app/api/orders/track/${orderId}`);
       
       if (response.data.success) {
         setOrderData(response.data.data);

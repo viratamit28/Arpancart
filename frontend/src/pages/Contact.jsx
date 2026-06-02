@@ -21,7 +21,7 @@ const Contact = () => {
     setStatus({ loading: true, success: false, error: null });
 
     try {
-      const response = await axios.post('https://arpancart.onrender.com/api/contact', formData);
+      const response = await axios.post('https://arpancart-production.up.railway.app/api/contact', formData);
 
       if (response.data.success || response.status === 200 || response.status === 201) {
         setStatus({ loading: false, success: true, error: null });

@@ -12,7 +12,7 @@ const PopularProducts = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get('https://arpancart.onrender.com/api/products');
+        const response = await axios.get('https://arpancart-production.up.railway.app/api/products');
         
         // Solid data extraction logic
         let productsArray = [];

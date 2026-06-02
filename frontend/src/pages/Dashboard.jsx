@@ -40,10 +40,10 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       try {
         const [ordersRes, addressesRes] = await Promise.all([
-          axios.get('https://arpancart.onrender.com/api/orders/my-orders', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('https://arpancart.onrender.com/api/addresses', { headers: { Authorization: `Bearer ${token}` } })
+          axios.get('https://arpancart-production.up.railway.app/api/orders/my-orders', { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get('https://arpancart-production.up.railway.app/api/addresses', { headers: { Authorization: `Bearer ${token}` } })
         ]);
-        
+
         setOrders(ordersRes.data.data);
         setAddresses(addressesRes.data.data);
       } catch (err) {
@@ -75,7 +75,7 @@ const Dashboard = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const response = await axios.post('https://arpancart.onrender.com/api/addresses', addressForm, {
+      const response = await axios.post('https://arpancart-production.up.railway.app/api/addresses', addressForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
