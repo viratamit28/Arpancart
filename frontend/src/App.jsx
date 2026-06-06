@@ -19,6 +19,7 @@ import Dashboard from './pages/Dashboard';
 import Terms from './pages/Terms';
 import Return from './pages/Return';
 import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
 
 
 function App() {
@@ -52,6 +53,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
 <Route path="/return" element={<Return />} />
           </Routes>
         </main>

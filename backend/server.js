@@ -330,3 +330,68 @@ app.get('/api/admin/orders', verifyToken, isAdmin, async (req, res) => {
     res.status(500).json({ success: false, message: "Orders fetch error", error: error.message });
   }
 });
+
+// ==========================================
+// ⚙️ 8. ADMIN ACTIONS (Orders & Products)
+// ==========================================
+
+// 🔄 1. Update Order Status
+app.put('/api/admin/orders/:id/status', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id);
+    const { status } = req.body; // Pending, Shipped, Delivered
+
+    const updatedOrder = await prisma.order.update({
+      where: { id: orderId },
+      data: { status: status }
+    });
+
+    res.json({ success: true, message: `Order status updated to ${status}! ✅`, data: updatedOrder });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Order status update nahi ho paya", error: error.message });
+  }
+});
+
+// ➕ 2. Add New Product
+app.post('/api/admin/products', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { title, description, price, category, imageUrl, stockQuantity, discountedPrice } = req.body;
+    
+    const newProduct = await prisma.product.create({
+      data: {
+        title,
+        description,
+        price: parseFloat(price),
+        discountedPrice: discountedPrice ? parseFloat(discountedPrice) : null,
+        category,
+        imageUrl,
+        stockQuantity: parseInt(stockQuantity || 0)
+      }
+    });
+
+    res.status(201).json({ success: true, message: "Naya Product successfully add ho gaya! 🛍️", data: newProduct });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Product add karne me error aayi", error: error.message });
+  }
+});
+
+// 🗑️ 3. Delete Product
+app.delete('/api/admin/products/:id', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+    
+    // Check if product exists
+    const product = await prisma.product.findUnique({ where: { id: productId } });
+    if (!product) return res.status(404).json({ success: false, message: "Product nahi mila" });
+
+    // Note: Agar is product se related koi OrderItem hai, toh delete me restriction aa sakti hai. 
+    // Uske liye pehle aage chal ke DB me onDelete: Cascade lagana padta hai, par abhi basic delete chalega.
+    await prisma.product.delete({
+      where: { id: productId }
+    });
+
+    res.json({ success: true, message: "Product delete ho gaya! 🗑️" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Product delete karne me error aayi (Shayad iska order place ho chuka hai)", error: error.message });
+  }
+});
