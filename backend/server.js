@@ -77,6 +77,42 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// 🔐 ADMIN LOGIN API (Sirf Admin credentials hi allow karega)
+app.post('/api/auth/admin-login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.status(400).json({ success: false, message: "Invalid credentials" });
+    
+    // Check if user role is admin
+    if (user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: "Access Denied! Sirf Admin yahan login kar sakte hain." });
+    }
+    
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ success: false, message: "Invalid credentials" });
+    
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({ success: true, message: "Admin Login successful! 👑", token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Login error", error: error.message });
+  }
+});
+
+// 👑 SECRET API: Ek baar hit karke khud ko Admin banane ke liye
+app.get('/api/auth/make-me-admin/:email', async (req, res) => {
+  try {
+    const email = req.params.email;
+    const updatedUser = await prisma.user.update({
+      where: { email: email },
+      data: { role: 'admin' }
+    });
+    res.json({ success: true, message: `Badhai ho! ${email} ab ADMIN ban chuka hai! 👑` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Account nahi mila ya error aayi", error: error.message });
+  }
+});
+
 // ==========================================
 // 🛡️ 3. SECURITY MIDDLEWARE
 // ==========================================
@@ -92,8 +128,21 @@ const verifyToken = (req, res, next) => {
   }
 };
 
+// 🛡️ ADMIN VERIFICATION MIDDLEWARE (Nayi Admin APIs ko protect karne ke liye)
+const isAdmin = async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: "Access Denied! You are not authorized." });
+    }
+    next(); 
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Role verify karne me error aayi." });
+  }
+};
+
 // ==========================================
-// 📦 4. ORDER APIs (🚨 YAHAN FIX KIYA HAI)
+// 📦 4. ORDER APIs
 // ==========================================
 app.post('/api/orders', verifyToken, async (req, res) => {
   try {
@@ -106,13 +155,13 @@ app.post('/api/orders', verifyToken, async (req, res) => {
     const newOrder = await prisma.order.create({
       data: {
         userId: req.user.userId,
-        totalAmount: parseFloat(totalAmount), // 🔥 String ko Float banaya
+        totalAmount: parseFloat(totalAmount), 
         status: "Processing",
         items: {
           create: items.map(item => {
             const pId = item.product?.id || item.product || item.id || item._id;
             return {
-              productId: parseInt(pId), // 🔥 String ko Int banaya
+              productId: parseInt(pId), 
               quantity: parseInt(item.quantity || 1),
               price: parseFloat(item.price || item.discountedPrice)
             };
@@ -185,12 +234,7 @@ app.post('/api/contact', async (req, res) => {
     }
 
     const newContact = await prisma.contact.create({
-      data: {
-        name,
-        email,
-        subject,
-        message
-      }
+      data: { name, email, subject, message }
     });
 
     res.status(201).json({ success: true, message: "Message sent successfully!" });

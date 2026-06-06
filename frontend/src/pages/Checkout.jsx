@@ -8,8 +8,9 @@ const Checkout = () => {
   const navigate = useNavigate();
   const { cartItems, setCartItems } = useContext(CartContext);
   const [loading, setLoading] = useState(false);
-  const [pinLoading, setPinLoading] = useState(false); // PIN code search ka loading state
-  const [saveAddress, setSaveAddress] = useState(true); // Checkbox state
+  const [pinLoading, setPinLoading] = useState(false);
+  const [saveAddress, setSaveAddress] = useState(true);
+  const [pinError, setPinError] = useState(''); // 🎯 Naya state error ke liye
 
   // Form State
   const [shippingData, setShippingData] = useState({
@@ -25,7 +26,7 @@ const Checkout = () => {
   const totalAmount = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
   // =========================================
-  // FEATURE 1: AUTO-LOAD SAVED ADDRESS
+  // AUTO-LOAD SAVED ADDRESS
   // =========================================
   useEffect(() => {
     const savedAddress = localStorage.getItem('arpancart_saved_address');
@@ -34,7 +35,6 @@ const Checkout = () => {
     }
   }, []);
 
-  // Agar cart khali hai
   if (cartItems.length === 0) {
     return (
       <div className="min-h-[70vh] bg-[#fcfaf5] flex flex-col items-center justify-center">
@@ -51,15 +51,16 @@ const Checkout = () => {
   };
 
   // =========================================
-  // FEATURE 2: PIN CODE AUTO-DETECT CITY/STATE
+  // PIN CODE AUTO-DETECT (PATNA ONLY LOGIC)
   // =========================================
   const handlePinChange = async (e) => {
     const pin = e.target.value;
+    
     // Only allow numbers and max 6 digits
     if (pin.length <= 6 && /^[0-9]*$/.test(pin)) {
       setShippingData({ ...shippingData, zipCode: pin });
+      setPinError(''); // Clear error on typing
       
-      // Jaise hi 6 digit poore honge, API call maaro
       if (pin.length === 6) {
         setPinLoading(true);
         try {
@@ -68,14 +69,31 @@ const Checkout = () => {
           
           if (data.Status === "Success") {
             const postOffice = data.PostOffice[0];
-            setShippingData(prev => ({
-              ...prev,
-              city: postOffice.District,
-              state: postOffice.State
-            }));
+            const fetchedDistrict = postOffice.District;
+
+            // 🎯 PATNA ONLY LOGIC
+            if (fetchedDistrict.toLowerCase() === "patna") {
+              setPinError(''); 
+              setShippingData(prev => ({
+                ...prev,
+                city: postOffice.District,
+                state: postOffice.State
+              }));
+            } else {
+              setPinError(`Sorry! We only deliver in Patna. Your PIN is for ${fetchedDistrict}.`);
+              setShippingData(prev => ({
+                ...prev,
+                city: '',
+                state: ''
+              }));
+            }
+          } else {
+             setPinError("Invalid PIN Code. Please check again.");
+             setShippingData(prev => ({ ...prev, city: '', state: '' }));
           }
         } catch (error) {
           console.error("PIN Code fetch error:", error);
+          setPinError("Error fetching location. Please try again.");
         } finally {
           setPinLoading(false);
         }
@@ -85,6 +103,13 @@ const Checkout = () => {
 
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
+
+    // 🎯 SECURITY CHECK: Stop order if not Patna
+    if (pinError || shippingData.city.toLowerCase() !== 'patna') {
+      alert("Please enter a valid Patna PIN code to place the order.");
+      return; 
+    }
+
     setLoading(true);
 
     const token = localStorage.getItem('token');
@@ -107,7 +132,6 @@ const Checkout = () => {
       });
 
       if (response.data.success) {
-        // FEATURE 1 (Part B): Agar user ne checkbox tick kiya hai, toh address save karlo
         if (saveAddress) {
           localStorage.setItem('arpancart_saved_address', JSON.stringify(shippingData));
         } else {
@@ -115,8 +139,8 @@ const Checkout = () => {
         }
 
         alert("🎉 Order Placed Successfully! Jai Shree Ram!");
-        if (setCartItems) setCartItems([]); 
-        navigate('/dashboard'); 
+        if (setCartItems) setCartItems([]);
+        navigate('/dashboard');
       }
     } catch (error) {
       console.error("Order failed:", error);
@@ -174,42 +198,50 @@ const Checkout = () => {
                   </div>
                 </div>
 
-                {/* PIN Code & Auto City/State Row */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {/* 🎯 PIN Code & Auto City/State Row (Updated UI) */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 relative mb-4">
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Hash className="h-5 w-5 text-gray-400" />
                     </div>
-                    <input 
-                      type="text" 
-                      name="zipCode" 
-                      placeholder="6-Digit PIN Code" 
+                    <input
+                      type="text"
+                      name="zipCode"
+                      placeholder="6-Digit PIN Code"
                       maxLength="6"
-                      required 
-                      value={shippingData.zipCode} 
-                      onChange={handlePinChange} 
-                      className={`w-full pl-10 pr-10 py-3 border rounded-md outline-none transition-all focus:bg-white ${shippingData.zipCode.length === 6 ? 'border-green-400 focus:border-green-500 ring-green-500 bg-green-50' : 'border-gray-200 focus:border-[#f7941d] focus:ring-[#f7941d] bg-gray-50'}`} 
+                      required
+                      value={shippingData.zipCode}
+                      onChange={handlePinChange}
+                      className={`w-full pl-10 pr-10 py-3 border rounded-md outline-none transition-all focus:bg-white 
+                        ${pinError ? 'border-red-500 focus:border-red-500 ring-1 ring-red-500 bg-red-50 text-red-600' : 
+                          shippingData.zipCode.length === 6 ? 'border-green-400 focus:border-green-500 ring-1 ring-green-500 bg-green-50' : 
+                          'border-gray-200 focus:border-[#f7941d] focus:ring-1 focus:ring-[#f7941d] bg-gray-50'}`}
                     />
                     {pinLoading && (
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                         <Loader2 className="h-5 w-5 text-[#f7941d] animate-spin" />
                       </div>
                     )}
+                    {/* Error Message */}
+                    {pinError && (
+                      <p className="text-red-500 text-[13px] mt-1 font-bold absolute -bottom-5 left-0 w-[200%]">
+                        {pinError}
+                      </p>
+                    )}
                   </div>
 
-                  {/* City aur State ab readOnly hain kyunki API laa rahi hai, par manual enter bhi kar sakte hain agar API fail ho */}
-                  <input type="text" name="city" placeholder="City / District" required value={shippingData.city} onChange={handleChange} className={`w-full px-4 py-3 border rounded-md outline-none focus:border-[#f7941d] focus:ring-1 focus:ring-[#f7941d] transition-all ${shippingData.city ? 'bg-gray-100 text-gray-600 border-gray-200' : 'bg-gray-50 border-gray-200'}`} />
-                  <input type="text" name="state" placeholder="State" required value={shippingData.state} onChange={handleChange} className={`w-full px-4 py-3 border rounded-md outline-none focus:border-[#f7941d] focus:ring-1 focus:ring-[#f7941d] transition-all ${shippingData.state ? 'bg-gray-100 text-gray-600 border-gray-200' : 'bg-gray-50 border-gray-200'}`} />
+                  <input type="text" name="city" placeholder="City / District" required readOnly value={shippingData.city} className={`w-full px-4 py-3 border rounded-md outline-none transition-all ${shippingData.city ? 'bg-gray-100 text-gray-600 border-gray-200 cursor-not-allowed' : 'bg-gray-50 border-gray-200 cursor-not-allowed'}`} />
+                  <input type="text" name="state" placeholder="State" required readOnly value={shippingData.state} className={`w-full px-4 py-3 border rounded-md outline-none transition-all ${shippingData.state ? 'bg-gray-100 text-gray-600 border-gray-200 cursor-not-allowed' : 'bg-gray-50 border-gray-200 cursor-not-allowed'}`} />
                 </div>
 
                 {/* Save Address Checkbox */}
-                <div className="flex items-center mt-4">
-                  <input 
-                    type="checkbox" 
-                    id="saveAddress" 
-                    checked={saveAddress} 
+                <div className="flex items-center mt-6">
+                  <input
+                    type="checkbox"
+                    id="saveAddress"
+                    checked={saveAddress}
                     onChange={(e) => setSaveAddress(e.target.checked)}
-                    className="w-4 h-4 text-[#f7941d] border-gray-300 rounded focus:ring-[#f7941d] cursor-pointer" 
+                    className="w-4 h-4 text-[#f7941d] border-gray-300 rounded focus:ring-[#f7941d] cursor-pointer"
                   />
                   <label htmlFor="saveAddress" className="ml-2 block text-sm font-medium text-gray-700 cursor-pointer">
                     Save this address for future orders
@@ -273,11 +305,13 @@ const Checkout = () => {
                 <span className="text-3xl font-extrabold text-[#c21820]">₹{totalAmount}</span>
               </div>
 
-              <button 
+              {/* 🎯 BUTTON: Disabled agar Error ho */}
+              <button
                 type="submit"
                 form="checkout-form"
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-2 bg-[#f7941d] hover:bg-[#e0861a] text-white font-bold text-lg py-4 px-6 rounded shadow-md transition-all duration-300 hover:shadow-lg active:scale-95 disabled:opacity-70"
+                disabled={loading || pinLoading || pinError !== ''}
+                className={`w-full flex items-center justify-center gap-2 text-white font-bold text-lg py-4 px-6 rounded shadow-md transition-all duration-300 
+                  ${loading || pinError !== '' ? 'bg-gray-400 cursor-not-allowed opacity-80' : 'bg-[#f7941d] hover:bg-[#e0861a] hover:shadow-lg active:scale-95'}`}
               >
                 {loading ? (
                   <><Loader2 className="w-5 h-5 animate-spin" /> Processing...</>

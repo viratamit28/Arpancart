@@ -11,6 +11,7 @@ const Navbar = () => {
   const token = localStorage.getItem('token'); 
   
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleLogout = () => {
@@ -25,10 +26,21 @@ const Navbar = () => {
       navigate(`/shop?search=${encodeURIComponent(searchQuery)}`);
       setSearchQuery(''); 
       setIsMobileMenuOpen(false); 
+      setIsMobileSearchOpen(false); 
     }
   };
 
   const isActive = (path) => location.pathname === path;
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+    if (!isMobileMenuOpen) setIsMobileSearchOpen(false);
+  };
+
+  const toggleMobileSearch = () => {
+    setIsMobileSearchOpen(!isMobileSearchOpen);
+    if (!isMobileSearchOpen) setIsMobileMenuOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-50 shadow-sm w-full bg-[#fcfaf5]">
@@ -50,18 +62,20 @@ const Navbar = () => {
         {/* =========================================
             MAIN HEADER ROW (LOGO, SEARCH, ICONS)
         ========================================= */}
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex justify-between items-center gap-4 border-b border-[#8b1818]/10 md:border-none relative">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex justify-between items-center gap-4 border-b border-[#8b1818]/10 md:border-none relative bg-[#fcfaf5] z-20">
           
-          {/* Mobile Menu Toggle Button */}
-          <button 
-            className="md:hidden text-[#8b1818] hover:bg-orange-50 p-1 rounded transition-colors" 
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
-          </button>
+          {/* Mobile Menu Toggle Button (Left) */}
+          <div className="flex-1 md:hidden">
+            <button 
+              className="text-[#8b1818] hover:bg-orange-50 p-1 rounded transition-colors" 
+              onClick={toggleMobileMenu}
+            >
+              {isMobileMenuOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
+            </button>
+          </div>
 
-          {/* Logo */}
-          <Link to="/" className="flex-shrink-0 mx-auto md:mx-0" onClick={() => setIsMobileMenuOpen(false)}>
+          {/* Logo (Center) */}
+          <Link to="/" className="flex-shrink-0 mx-auto" onClick={() => { setIsMobileMenuOpen(false); setIsMobileSearchOpen(false); }}>
             <img src={logo} alt="Arpan Cart Logo" className="h-10 md:h-14 w-auto object-contain" />
           </Link>
 
@@ -79,18 +93,28 @@ const Navbar = () => {
             </button>
           </form>
 
-          {/* Right Side Icons (User & Cart) */}
-          <div className="flex items-center gap-4 md:gap-6">
-            <Link to={token ? "/dashboard" : "/login"} className="text-[#8b1818] hover:text-[#f7941d] transition-colors">
+          {/* Right Side Icons (Search, User & Cart) */}
+          <div className="flex items-center justify-end gap-4 md:gap-6 flex-1 md:flex-none">
+            
+            {/* Mobile Search Icon */}
+            <button 
+              className="md:hidden text-[#8b1818] hover:text-[#f7941d] transition-colors p-1"
+              onClick={toggleMobileSearch}
+            >
+              {isMobileSearchOpen ? <X className="w-6 h-6" /> : <Search className="w-6 h-6" />}
+            </button>
+
+            {/* 🔴 NAYA: User Icon sirf Desktop par dikhega */}
+            <Link to={token ? "/dashboard" : "/login"} className="hidden md:block text-[#8b1818] hover:text-[#f7941d] transition-colors">
               <User className="w-6 h-6" />
             </Link>
             
             {/* Cart Icon with Indicator */}
             <div className="relative">
-              <Link to="/cart" className="relative text-[#8b1818] hover:text-[#f7941d] transition-colors block">
+              <Link to="/cart" className="relative text-[#8b1818] hover:text-[#f7941d] transition-colors block p-1">
                 <ShoppingCart className="w-6 h-6" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-[#f7941d] text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full shadow-sm">
+                  <span className="absolute -top-1 -right-1 bg-[#f7941d] text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full shadow-sm">
                     {cartCount}
                   </span>
                 )}
@@ -123,25 +147,35 @@ const Navbar = () => {
         </div>
 
         {/* =========================================
+            MOBILE SLIDING SEARCH BAR
+        ========================================= */}
+        <div 
+          className={`md:hidden absolute w-full left-0 bg-[#fcfaf5] border-b border-gray-200 transition-all duration-300 ease-in-out z-10 shadow-md ${
+            isMobileSearchOpen ? 'translate-y-0 opacity-100 pointer-events-auto' : '-translate-y-full opacity-0 pointer-events-none'
+          }`}
+        >
+          <div className="p-4">
+            <form onSubmit={handleSearchSubmit} className="flex items-center bg-white border border-orange-200 rounded-sm px-3 py-2 shadow-sm focus-within:border-[#f7941d] transition-colors">
+              <input 
+                type="text" 
+                placeholder="Search products..." 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+                className="w-full outline-none text-sm bg-transparent text-gray-800" 
+                autoFocus={isMobileSearchOpen}
+              />
+              <button type="submit" className="text-[#8b1818] ml-2 p-1">
+                <Search className="w-5 h-5" />
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* =========================================
             MOBILE DROPDOWN MENU
         ========================================= */}
         {isMobileMenuOpen && (
           <div className="md:hidden absolute top-full left-0 w-full bg-white shadow-lg border-b border-gray-100 flex flex-col z-40 animate-fade-in-down">
-            
-            {/* Mobile Search Bar */}
-            <div className="p-4 border-b border-gray-100 bg-gray-50">
-              <form onSubmit={handleSearchSubmit} className="flex items-center bg-white border border-gray-200 rounded px-3 py-2 shadow-sm focus-within:border-[#f7941d]">
-                <input 
-                  type="text" 
-                  placeholder="Search products..." 
-                  value={searchQuery} 
-                  onChange={(e) => setSearchQuery(e.target.value)} 
-                  className="w-full outline-none text-sm bg-transparent" 
-                />
-                <button type="submit" className="text-[#8b1818] ml-2"><Search className="w-4 h-4" /></button>
-              </form>
-            </div>
-
             {/* Mobile Navigation Links */}
             <div className="flex flex-col py-2 font-bold text-gray-700 uppercase tracking-wide text-sm">
               <Link to="/" className={`px-6 py-3 border-b border-gray-50 ${isActive('/') ? 'text-[#c21820] bg-orange-50' : 'hover:bg-gray-50'}`} onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
@@ -149,6 +183,11 @@ const Navbar = () => {
               <Link to="/subscriptions" className={`px-6 py-3 border-b border-gray-50 ${isActive('/subscriptions') ? 'text-[#c21820] bg-orange-50' : 'hover:bg-gray-50'}`} onClick={() => setIsMobileMenuOpen(false)}>Subscriptions</Link>
               <Link to="/about" className={`px-6 py-3 border-b border-gray-50 ${isActive('/about') ? 'text-[#c21820] bg-orange-50' : 'hover:bg-gray-50'}`} onClick={() => setIsMobileMenuOpen(false)}>About Us</Link>
               <Link to="/contact" className={`px-6 py-3 border-b border-gray-50 ${isActive('/contact') ? 'text-[#c21820] bg-orange-50' : 'hover:bg-gray-50'}`} onClick={() => setIsMobileMenuOpen(false)}>Contact</Link>
+              
+              {/* 🔴 NAYA: Mobile Dashboard Link (Sirf Tab dikhega jab user logged in hoga) */}
+              {token && (
+                <Link to="/dashboard" className={`px-6 py-3 border-b border-gray-50 ${isActive('/dashboard') ? 'text-[#c21820] bg-orange-50' : 'hover:bg-gray-50'}`} onClick={() => setIsMobileMenuOpen(false)}>My Dashboard</Link>
+              )}
             </div>
 
             {/* Mobile Auth Button */}
