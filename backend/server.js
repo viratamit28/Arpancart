@@ -12,7 +12,34 @@ app.use(cors());
 app.use(express.json());
 
 // ==========================================
-// 🛍️ 1. PRODUCT APIs
+// 🛡️ 1. SECURITY MIDDLEWARE
+// ==========================================
+const verifyToken = (req, res, next) => {
+  const token = req.header('Authorization');
+  if (!token) return res.status(401).json({ success: false, message: "Access Denied! Token nahi mila." });
+  try {
+    const verified = jwt.verify(token.split(" ")[1], process.env.JWT_SECRET);
+    req.user = verified; 
+    next(); 
+  } catch (error) {
+    res.status(400).json({ success: false, message: "Invalid Token!" });
+  }
+};
+
+const isAdmin = async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: "Access Denied! You are not authorized." });
+    }
+    next(); 
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Role verify karne me error aayi." });
+  }
+};
+
+// ==========================================
+// 🛍️ 2. PUBLIC APIs (Products)
 // ==========================================
 app.get('/api/products', async (req, res) => {
   try {
@@ -42,7 +69,7 @@ app.get('/api/seed-products', async (req, res) => {
 });
 
 // ==========================================
-// 🔐 2. AUTHENTICATION APIs
+// 🔐 3. AUTHENTICATION APIs
 // ==========================================
 app.post('/api/auth/register', async (req, res) => {
   try {
@@ -77,14 +104,12 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// 🔐 ADMIN LOGIN API (Sirf Admin credentials hi allow karega)
 app.post('/api/auth/admin-login', async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(400).json({ success: false, message: "Invalid credentials" });
     
-    // Check if user role is admin
     if (user.role !== 'admin') {
       return res.status(403).json({ success: false, message: "Access Denied! Sirf Admin yahan login kar sakte hain." });
     }
@@ -99,7 +124,6 @@ app.post('/api/auth/admin-login', async (req, res) => {
   }
 });
 
-// 👑 SECRET API: Ek baar hit karke khud ko Admin banane ke liye
 app.get('/api/auth/make-me-admin/:email', async (req, res) => {
   try {
     const email = req.params.email;
@@ -114,35 +138,7 @@ app.get('/api/auth/make-me-admin/:email', async (req, res) => {
 });
 
 // ==========================================
-// 🛡️ 3. SECURITY MIDDLEWARE
-// ==========================================
-const verifyToken = (req, res, next) => {
-  const token = req.header('Authorization');
-  if (!token) return res.status(401).json({ success: false, message: "Access Denied! Token nahi mila." });
-  try {
-    const verified = jwt.verify(token.split(" ")[1], process.env.JWT_SECRET);
-    req.user = verified; 
-    next(); 
-  } catch (error) {
-    res.status(400).json({ success: false, message: "Invalid Token!" });
-  }
-};
-
-// 🛡️ ADMIN VERIFICATION MIDDLEWARE (Nayi Admin APIs ko protect karne ke liye)
-const isAdmin = async (req, res, next) => {
-  try {
-    const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
-    if (!user || user.role !== 'admin') {
-      return res.status(403).json({ success: false, message: "Access Denied! You are not authorized." });
-    }
-    next(); 
-  } catch (error) {
-    res.status(500).json({ success: false, message: "Role verify karne me error aayi." });
-  }
-};
-
-// ==========================================
-// 📦 4. ORDER APIs
+// 📦 4. ORDER APIs (Protected)
 // ==========================================
 app.post('/api/orders', verifyToken, async (req, res) => {
   try {
@@ -191,29 +187,17 @@ app.get('/api/orders/my-orders', verifyToken, async (req, res) => {
   }
 });
 
-// ==========================================
-// 🚀 4.5 TRACK ORDER API
-// ==========================================
 app.get('/api/orders/track/:orderId', async (req, res) => {
   try {
     const orderId = parseInt(req.params.orderId);
-    
-    if (isNaN(orderId)) {
-      return res.status(400).json({ success: false, message: "Invalid Order ID format. Please use numbers." });
-    }
+    if (isNaN(orderId)) return res.status(400).json({ success: false, message: "Invalid Order ID format. Please use numbers." });
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
-      include: { 
-        items: { 
-          include: { product: true } 
-        } 
-      }
+      include: { items: { include: { product: true } } }
     });
 
-    if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found. Please verify the ID." });
-    }
+    if (!order) return res.status(404).json({ success: false, message: "Order not found. Please verify the ID." });
 
     res.json({ success: true, data: order });
   } catch (error) {
@@ -223,51 +207,20 @@ app.get('/api/orders/track/:orderId', async (req, res) => {
 });
 
 // ==========================================
-// 📧 5. CONTACT API
-// ==========================================
-app.post('/api/contact', async (req, res) => {
-  try {
-    const { name, email, subject, message } = req.body;
-
-    if (!name || !email || !subject || !message) {
-      return res.status(400).json({ success: false, message: "Please fill all fields." });
-    }
-
-    const newContact = await prisma.contact.create({
-      data: { name, email, subject, message }
-    });
-
-    res.status(201).json({ success: true, message: "Message sent successfully!" });
-  } catch (error) {
-    console.error("Contact form error:", error);
-    res.status(500).json({ success: false, message: "Server error, please try again later.", error: error.message });
-  }
-});
-
-// ==========================================
-// 🏠 6. ADDRESS APIs
+// 🏠 5. ADDRESS APIs (Protected)
 // ==========================================
 app.post('/api/addresses', verifyToken, async (req, res) => {
   try {
     const { fullName, phone, street, city, state, pincode, isDefault } = req.body;
-
     if (!fullName || !phone || !street || !city || !state || !pincode) {
       return res.status(400).json({ success: false, message: "Please fill all the address fields." });
     }
 
     const newAddress = await prisma.address.create({
       data: {
-        userId: req.user.userId,
-        fullName,
-        phone,
-        street,
-        city,
-        state,
-        pincode,
-        isDefault: isDefault || false
+        userId: req.user.userId, fullName, phone, street, city, state, pincode, isDefault: isDefault || false
       }
     });
-
     res.status(201).json({ success: true, message: "Address saved successfully!", data: newAddress });
   } catch (error) {
     console.error("Address save error:", error);
@@ -288,26 +241,34 @@ app.get('/api/addresses', verifyToken, async (req, res) => {
   }
 });
 
-// Server Start
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`⚙️ Server running on port ${PORT}`);
+// ==========================================
+// 📧 6. CONTACT API
+// ==========================================
+app.post('/api/contact', async (req, res) => {
+  try {
+    const { name, email, subject, message } = req.body;
+    if (!name || !email || !subject || !message) return res.status(400).json({ success: false, message: "Please fill all fields." });
+
+    const newContact = await prisma.contact.create({ data: { name, email, subject, message } });
+    res.status(201).json({ success: true, message: "Message sent successfully!" });
+  } catch (error) {
+    console.error("Contact form error:", error);
+    res.status(500).json({ success: false, message: "Server error, please try again later.", error: error.message });
+  }
 });
 
 // ==========================================
 // 👑 7. ADMIN ONLY APIs (DASHBOARD)
 // ==========================================
-
-// Get Dashboard Stats
 app.get('/api/admin/stats', verifyToken, isAdmin, async (req, res) => {
   try {
     const totalOrders = await prisma.order.count();
     const totalProducts = await prisma.product.count();
     const totalUsers = await prisma.user.count({ where: { role: 'customer' } });
     
-    // Total Revenue Calculate karo
-    const allOrders = await prisma.order.findMany({ select: { totalAmount: true } });
-    const totalRevenue = allOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    // Revenue calculate karne ka optimized tarika (Prisma aggregate se)
+    const orderSums = await prisma.order.aggregate({ _sum: { totalAmount: true } });
+    const totalRevenue = orderSums._sum.totalAmount || 0;
 
     res.json({ success: true, data: { totalOrders, totalProducts, totalUsers, totalRevenue } });
   } catch (error) {
@@ -315,7 +276,6 @@ app.get('/api/admin/stats', verifyToken, isAdmin, async (req, res) => {
   }
 });
 
-// Get All Orders for Admin
 app.get('/api/admin/orders', verifyToken, isAdmin, async (req, res) => {
   try {
     const orders = await prisma.order.findMany({
@@ -331,67 +291,83 @@ app.get('/api/admin/orders', verifyToken, isAdmin, async (req, res) => {
   }
 });
 
-// ==========================================
-// ⚙️ 8. ADMIN ACTIONS (Orders & Products)
-// ==========================================
-
-// 🔄 1. Update Order Status
 app.put('/api/admin/orders/:id/status', verifyToken, isAdmin, async (req, res) => {
   try {
     const orderId = parseInt(req.params.id);
-    const { status } = req.body; // Pending, Shipped, Delivered
+    const { status } = req.body; 
 
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: { status: status }
     });
-
     res.json({ success: true, message: `Order status updated to ${status}! ✅`, data: updatedOrder });
   } catch (error) {
     res.status(500).json({ success: false, message: "Order status update nahi ho paya", error: error.message });
   }
 });
 
-// ➕ 2. Add New Product
 app.post('/api/admin/products', verifyToken, isAdmin, async (req, res) => {
   try {
     const { title, description, price, category, imageUrl, stockQuantity, discountedPrice } = req.body;
-    
     const newProduct = await prisma.product.create({
       data: {
-        title,
-        description,
-        price: parseFloat(price),
-        discountedPrice: discountedPrice ? parseFloat(discountedPrice) : null,
-        category,
-        imageUrl,
-        stockQuantity: parseInt(stockQuantity || 0)
+        title, description, price: parseFloat(price), discountedPrice: discountedPrice ? parseFloat(discountedPrice) : null,
+        category, imageUrl, stockQuantity: parseInt(stockQuantity || 0)
       }
     });
-
     res.status(201).json({ success: true, message: "Naya Product successfully add ho gaya! 🛍️", data: newProduct });
   } catch (error) {
     res.status(500).json({ success: false, message: "Product add karne me error aayi", error: error.message });
   }
 });
 
-// 🗑️ 3. Delete Product
+app.put('/api/admin/products/:id', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+    const { title, description, price, category, imageUrl, stockQuantity, discountedPrice } = req.body;
+    
+    const updatedProduct = await prisma.product.update({
+      where: { id: productId },
+      data: {
+        title, description, price: parseFloat(price), discountedPrice: discountedPrice ? parseFloat(discountedPrice) : null,
+        category, imageUrl, stockQuantity: parseInt(stockQuantity || 0)
+      }
+    });
+    res.json({ success: true, message: "Product successfully update ho gaya! ✏️", data: updatedProduct });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Product update nahi ho paya", error: error.message });
+  }
+});
+
 app.delete('/api/admin/products/:id', verifyToken, isAdmin, async (req, res) => {
   try {
     const productId = parseInt(req.params.id);
-    
-    // Check if product exists
     const product = await prisma.product.findUnique({ where: { id: productId } });
     if (!product) return res.status(404).json({ success: false, message: "Product nahi mila" });
 
-    // Note: Agar is product se related koi OrderItem hai, toh delete me restriction aa sakti hai. 
-    // Uske liye pehle aage chal ke DB me onDelete: Cascade lagana padta hai, par abhi basic delete chalega.
-    await prisma.product.delete({
-      where: { id: productId }
-    });
-
+    await prisma.product.delete({ where: { id: productId } });
     res.json({ success: true, message: "Product delete ho gaya! 🗑️" });
   } catch (error) {
     res.status(500).json({ success: false, message: "Product delete karne me error aayi (Shayad iska order place ho chuka hai)", error: error.message });
   }
+});
+
+app.get('/api/admin/users', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: { id: true, name: true, email: true, role: true, createdAt: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ success: true, data: users });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Customers fetch karne me error aayi", error: error.message });
+  }
+});
+
+// ==========================================
+// 🚀 8. SERVER START (Yeh hamesha End mein hona chahiye!)
+// ==========================================
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`⚙️ Server running on port ${PORT}`);
 });
