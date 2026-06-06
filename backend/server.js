@@ -293,3 +293,40 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`⚙️ Server running on port ${PORT}`);
 });
+
+// ==========================================
+// 👑 7. ADMIN ONLY APIs (DASHBOARD)
+// ==========================================
+
+// Get Dashboard Stats
+app.get('/api/admin/stats', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const totalOrders = await prisma.order.count();
+    const totalProducts = await prisma.product.count();
+    const totalUsers = await prisma.user.count({ where: { role: 'customer' } });
+    
+    // Total Revenue Calculate karo
+    const allOrders = await prisma.order.findMany({ select: { totalAmount: true } });
+    const totalRevenue = allOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+    res.json({ success: true, data: { totalOrders, totalProducts, totalUsers, totalRevenue } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Stats fetch error", error: error.message });
+  }
+});
+
+// Get All Orders for Admin
+app.get('/api/admin/orders', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const orders = await prisma.order.findMany({
+      include: { 
+        user: { select: { name: true, email: true } },
+        items: { include: { product: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ success: true, data: orders });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Orders fetch error", error: error.message });
+  }
+});
