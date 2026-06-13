@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Mail, Lock, User as UserIcon, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User as UserIcon, ArrowRight, Phone } from 'lucide-react'; 
+import poojaImage from '../assets/2.jpg';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -12,64 +13,77 @@ const Auth = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: ''
+    password: '',
+    mobileNumber: '' // New field added
   });
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError(null); // Type karte hi purana error hata do
+    const { name, value } = e.target;
+    
+    // Strict real-time validation for mobile number (only digits, max 10 characters)
+    if (name === 'mobileNumber') {
+      const numericValue = value.replace(/\D/g, ''); // Remove non-numeric characters
+      if (numericValue.length <= 10) {
+        setFormData({ ...formData, [name]: numericValue });
+      }
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+    
+    setError(null); // Clear errors as user types
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Final frontend validation before hitting the API
+    if (!isLogin && formData.mobileNumber.length !== 10) {
+      setError("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     const url = isLogin 
-      ? 'https://arpancart-production.up.railway.app/api/auth/login' 
-      : 'https://arpancart-production.up.railway.app/api/auth/register';
+      ? 'https://arpancart-production.up.railway.app/api/auth/login' 
+      : 'https://arpancart-production.up.railway.app/api/auth/register';
 
     try {
       const response = await axios.post(url, formData);
       
       if (response.data.success) {
-        // Token ko localStorage me save karo
         localStorage.setItem('token', response.data.token);
-        
-        // Success alert aur redirect
         alert(`🎉 ${isLogin ? 'Login Successful!' : 'Account Created Successfully!'}`);
-        
-        // Login ke baad turant homepage ya dashboard bhej do
         navigate('/');
-        
-        // Navbar ko update karne ke liye page refresh (Optional, but easy way to sync state)
         window.location.reload(); 
       }
     } catch (err) {
       console.error("Auth Error:", err);
-      setError(err.response?.data?.message || "Kuch galat ho gaya. Please try again.");
+      setError(err.response?.data?.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  const toggleAuthMode = () => {
+    setIsLogin(!isLogin);
+    setError(null);
+    // Reset form when toggling
+    setFormData({ name: '', email: '', password: '', mobileNumber: '' });
+  };
+
   return (
-    // Cream background matching the overall theme
     <div className="min-h-[85vh] flex items-center justify-center bg-[#fcfaf5] py-12 px-4 sm:px-6 lg:px-8">
-      
-      {/* Main Card Container */}
       <div className="max-w-4xl w-full bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col md:flex-row border border-orange-50">
         
-        {/* =========================================
-            LEFT SIDE: IMAGE OVERLAY (Premium Feel)
-        ========================================= */}
+        {/* LEFT SIDE: IMAGE OVERLAY */}
         <div className="md:w-1/2 relative hidden md:block bg-orange-100">
           <img 
-            src="https://images.unsplash.com/photo-1605806616949-1e87b487cb2a?q=80&w=800&auto=format&fit=crop" 
+            src={poojaImage} 
             alt="Pooja Samagri" 
             className="absolute inset-0 w-full h-full object-cover"
           />
-          {/* Maroon Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#8b1818]/90 via-[#8b1818]/40 to-transparent flex flex-col justify-end p-10">
             <h2 className="text-3xl font-bold text-white mb-2">Welcome to Arpancart</h2>
             <p className="text-white/80 font-medium">
@@ -78,9 +92,7 @@ const Auth = () => {
           </div>
         </div>
 
-        {/* =========================================
-            RIGHT SIDE: AUTH FORM
-        ========================================= */}
+        {/* RIGHT SIDE: AUTH FORM */}
         <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-white">
           
           <div className="text-center mb-8">
@@ -92,7 +104,6 @@ const Auth = () => {
             </p>
           </div>
 
-          {/* Error Message Display */}
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm font-bold text-center mb-6 border border-red-100">
               {error}
@@ -115,6 +126,27 @@ const Auth = () => {
                   value={formData.name}
                   onChange={handleChange}
                   className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-md outline-none focus:border-[#f7941d] focus:ring-1 focus:ring-[#f7941d] transition-all bg-gray-50 focus:bg-white text-gray-700"
+                />
+              </div>
+            )}
+
+            {/* Mobile Number Field (Only for Signup) */}
+            {!isLogin && (
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Phone className="h-5 w-5 text-gray-400" />
+                </div>
+                <div className="absolute inset-y-0 left-10 flex items-center pointer-events-none">
+                  <span className="text-gray-500 font-medium border-r border-gray-300 pr-2">+91</span>
+                </div>
+                <input
+                  type="tel"
+                  name="mobileNumber"
+                  placeholder="Mobile Number"
+                  required={!isLogin}
+                  value={formData.mobileNumber}
+                  onChange={handleChange}
+                  className="w-full pl-[5.5rem] pr-4 py-3 border border-gray-200 rounded-md outline-none focus:border-[#f7941d] focus:ring-1 focus:ring-[#f7941d] transition-all bg-gray-50 focus:bg-white text-gray-700"
                 />
               </div>
             )}
@@ -168,10 +200,7 @@ const Auth = () => {
               {isLogin ? "Don't have an account?" : "Already have an account?"}
               <button 
                 type="button"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setError(null);
-                }}
+                onClick={toggleAuthMode}
                 className="ml-2 text-[#f7941d] hover:text-[#e0861a] font-bold transition-colors underline decoration-2 underline-offset-4"
               >
                 {isLogin ? 'Create one' : 'Login here'}

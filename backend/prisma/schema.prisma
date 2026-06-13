@@ -8,69 +8,152 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 2. User Table (Jaise Mongoose me User Schema hota hai)
+// ==========================================
+// ENUMS
+// ==========================================
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum DeliveryStatus {
+  PENDING
+  DELIVERED
+  PAUSED_SKIPPED
+  FAILED
+}
+
+// Order status ke liye strict Enum
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+// ==========================================
+// 🧑‍🤝‍🧑 1. USER TABLE 
+// ==========================================
 model User {
-  id        Int      @id @default(autoincrement()) // SQL me auto-increment ID hoti hai
-  name      String
-  email     String   @unique
-  password  String
-  role      String   @default("customer")
-  createdAt DateTime @default(now())
+  id            Int            @id @default(autoincrement())
+  name          String
+  email         String?        @unique 
+  phone         String?        @unique 
+  password      String?        
+  otp           String?        
+  otpExpiry     DateTime?      
+  role          String         @default("customer")
+  createdAt     DateTime       @default(now())
   
   // Relations
-  orders    Order[]
-  addresses Address[] // 🚨 YAHAN NAYA RELATION ADD KIYA HAI
+  orders        Order[]
+  addresses     Address[]
+  subscriptions Subscription[] 
 }
 
 // ==========================================
-// 🏠 2.5 ADDRESS TABLE (Yeh Naya Add Kiya Hai)
+// 🏠 2. ADDRESS TABLE 
 // ==========================================
 model Address {
-  id          Int      @id @default(autoincrement())
-  userId      Int      // Kis user ka address hai
-  fullName    String
-  phone       String
-  street      String
-  city        String
-  state       String
-  pincode     String
-  isDefault   Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int      
+  fullName  String
+  phone     String
+  street    String
+  city      String
+  state     String
+  pincode   String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
 
-  // Relation
-  user        User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 }
 
-// 3. Product Table
-model Product {
-  id              Int      @id @default(autoincrement())
-  title           String
-  description     String   @db.Text
-  price           Float
-  discountedPrice Float?   // '?' ka matlab optional hai
-  category        String
-  imageUrl        String
-  stockQuantity   Int      @default(0)
-  createdAt       DateTime @default(now())
+// ==========================================
+// 🗂️ 3. CATEGORY & SUB-CATEGORY 
+// ==========================================
+model Category {
+  id            Int           @id @default(autoincrement())
+  name          String        @unique
+  imageUrl      String?       
+  isActive      Boolean       @default(true) 
+  subCategories SubCategory[]
+  products      Product[]
+}
 
-  // Ek product multiple order items me ho sakta hai
+model SubCategory {
+  id         Int       @id @default(autoincrement())
+  name       String
+  categoryId Int
+  category   Category  @relation(fields: [categoryId], references: [id])
+  products   Product[]
+}
+
+// ==========================================
+// 🛍️ 4. PRODUCT TABLE 
+// ==========================================
+model Product {
+  id              Int       @id @default(autoincrement())
+  title           String
+  description     String    @db.Text
+  price           Float
+  discountedPrice Float?   
+  
+  // Category Relations
+  categoryString  String?  
+  categoryId      Int?
+  subCategoryId   Int?
+  
+  imageUrl        String
+  stockQuantity   Int       @default(0)
+  deliveryCharge  Float     @default(0) 
+  
+  // Trending section me product dikhane ke liye toggle
+  isTrending      Boolean   @default(false) 
+  
+  createdAt       DateTime  @default(now())
+
+  // Free Gift Feature 
+  freeGiftId      Int?
+  freeGift        Product?  @relation("FreeGiftRelation", fields: [freeGiftId], references: [id])
+  givenAsFreeGift Product[] @relation("FreeGiftRelation")
+
+  // Relations
+  category        Category?    @relation(fields: [categoryId], references: [id])
+  subCategory     SubCategory? @relation(fields: [subCategoryId], references: [id])
   orderItems      OrderItem[]
 }
 
-// 4. Order Table
+// ==========================================
+// 📦 5. ORDER & ORDER ITEM 
+// ==========================================
 model Order {
-  id          Int      @id @default(autoincrement())
-  userId      Int      // Kis user ne order kiya
-  totalAmount Float
-  status      String   @default("Pending") // Pending, Shipped, Delivered
-  createdAt   DateTime @default(now())
+  id              Int         @id @default(autoincrement())
+  userId          Int         
+  totalAmount     Float
+  deliveryFee     Float       @default(0) 
+  discount        Float       @default(0) 
+  couponApplied   String?  
+  
+  // 👇 YAHAN ADD KIYA HAI SHIPPING ADDRESS
+  shippingAddress String      @db.Text
+  
+  status          OrderStatus @default(PENDING) 
+  
+  // Payment tracking
+  paymentMethod   String      @default("COD") // e.g., "COD", "RAZORPAY"
+  paymentStatus   String      @default("PENDING") // e.g., "PENDING", "SUCCESS", "FAILED"
+  transactionId   String?     
+  
+  createdAt       DateTime    @default(now())
 
-  // Relations
-  user        User        @relation(fields: [userId], references: [id])
-  items       OrderItem[]
+  user            User        @relation(fields: [userId], references: [id])
+  items           OrderItem[]
 }
 
-// 5. Order Item Table (Cart ke items order ke andar)
 model OrderItem {
   id        Int     @id @default(autoincrement())
   orderId   Int
@@ -78,19 +161,95 @@ model OrderItem {
   quantity  Int
   price     Float
 
-  // Relations
   order     Order   @relation(fields: [orderId], references: [id])
   product   Product @relation(fields: [productId], references: [id])
 }
 
 // ==========================================
-// 📧 6. CONTACT TABLE
+// 🎟️ 6. COUPONS 
+// ==========================================
+model Coupon {
+  id            Int      @id @default(autoincrement())
+  code          String   @unique
+  discountType  String   // "FIXED" ya "PERCENTAGE"
+  discountValue Float
+  minOrderValue Float    @default(0)
+  expiryDate    DateTime
+  usageCount    Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+}
+
+// ==========================================
+// 🔄 7. 7-DAY GOD CAROUSEL 
+// ==========================================
+model DayCarousel {
+  id        Int     @id @default(autoincrement())
+  dayOfWeek String   
+  imageUrl  String  @db.Text // @db.Text lagana better hai agar array bohot bada ho jaye
+  isActive  Boolean @default(true)
+}
+
+// ==========================================
+// ⚙️ 8. ADMIN SITE SETTINGS 
+// ==========================================
+model SiteSetting {
+  id                Int     @id @default(1)
+  whatsappNumber    String? 
+  facebookUrl       String?
+  instagramUrl      String?
+  trendingBannerUrl String? @db.Text // Stringified array accept karne ke liye
+  trendingTitle     String?
+}
+
+// ==========================================
+// 📅 9. SUBSCRIPTIONS & DELIVERIES 
+// ==========================================
+model SubscriptionPlan {
+  id           Int            @id @default(autoincrement())
+  name         String         
+  price        Float
+  durationDays Int            
+  isActive     Boolean        @default(true)
+  
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id            Int                @id @default(autoincrement())
+  userId        Int
+  planId        Int
+  startDate     DateTime           
+  endDate       DateTime           
+  remainingDays Int                
+  status        SubscriptionStatus @default(ACTIVE) 
+  pausedAt      DateTime?          
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  user          User               @relation(fields: [userId], references: [id])
+  plan          SubscriptionPlan   @relation(fields: [planId], references: [id])
+  deliveries    SubscriptionDelivery[] 
+}
+
+model SubscriptionDelivery {
+  id             Int            @id @default(autoincrement())
+  subscriptionId Int
+  deliveryDate   DateTime
+  status         DeliveryStatus @default(PENDING) 
+  createdAt      DateTime       @default(now())
+
+  subscription   Subscription   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+}
+
+// ==========================================
+// 📧 10. CONTACT TABLE 
 // ==========================================
 model Contact {
   id        Int      @id @default(autoincrement())
   name      String
   email     String
   subject   String
-  message   String   @db.Text  // Lamba message store karne ke liye
+  message   String   @db.Text  
   createdAt DateTime @default(now())
 }

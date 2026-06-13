@@ -1,8 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 import { Mail, Phone, MapPin, ChevronRight, Heart, HeadphonesIcon } from 'lucide-react';
 
 const Footer = () => {
+  // 🔥 NAYA: Admin Settings se WhatsApp Number lane ke liye state
+  const [whatsappNumber, setWhatsappNumber] = useState('910000000000');
+
+  const API_BASE_URL = 'https://arpancart-production.up.railway.app/api';
+
+  useEffect(() => {
+    // 🌐 Fetch settings from backend
+    const fetchSettings = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/public-settings`);
+        if (res.data.success && res.data.data.whatsappNumber) {
+          setWhatsappNumber(res.data.data.whatsappNumber);
+        }
+      } catch (error) {
+        console.error("Error fetching settings for Footer", error);
+      }
+    };
+    fetchSettings();
+  }, []);
+
   return (
     // Background cream rakha hai blueprint matching ke liye, with a subtle top border
     <footer className="bg-[#fcfaf5] border-t-2 border-[#8b1818]/10 pt-16 pb-8 mt-12">
@@ -68,9 +89,24 @@ const Footer = () => {
               </li>
             </ul>
 
-            {/* Social Media Links (DIRECT SVGs used to bypass import errors) */}
+            {/* Social Media Links */}
             <h3 className="text-[#8b1818] font-bold text-lg mb-4 mt-6">Connect With Us</h3>
             <div className="flex gap-4">
+              
+              {/* 🔥 NAYA: WhatsApp Button Added */}
+              <a 
+                href={`https://wa.me/${whatsappNumber}?text=Hare%20Krishna!%20Mujhe%20ArpanCart%20se%20jankari%20chahiye.`}
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center text-[#25D366] hover:bg-[#25D366] hover:text-white transition-colors duration-300 shadow-sm"
+                title="Chat on WhatsApp"
+              >
+                {/* WhatsApp Native SVG */}
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                </svg>
+              </a>
+
               <a 
                 href="https://www.instagram.com/arpancart?utm_source=qr&igsh=OW94NWFhdzBocHd3" 
                 target="_blank" 

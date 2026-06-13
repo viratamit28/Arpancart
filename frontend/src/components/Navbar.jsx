@@ -1,8 +1,9 @@
-import React, { useContext, useState } from 'react';
-import { Search, ShoppingCart, User, LogOut, Phone, Mail, Menu, X, CheckCircle } from 'lucide-react'; 
+import React, { useContext, useState, useEffect } from 'react';
+import { Search, ShoppingCart, User, LogOut, Phone, Mail, Menu, X, CheckCircle, MessageCircle, CalendarClock } from 'lucide-react'; 
 import logo from '../assets/logo.png'; 
 import { CartContext } from '../context/CartContext';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
 
 const Navbar = () => {
   const { cartCount, showCartIndicator } = useContext(CartContext);
@@ -13,6 +14,27 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // 🔥 NAYA: Admin Settings se WhatsApp Number lane ke liye state
+  const [whatsappNumber, setWhatsappNumber] = useState('910000000000'); // Default fallback
+
+  // const API_BASE_URL = 'https://arpancart-production.up.railway.app/api';
+  const API_BASE_URL = 'http://localhost:5000/api';
+
+  useEffect(() => {
+    // 🌐 Fetch settings from backend
+    const fetchSettings = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/public-settings`);
+        if (res.data.success && res.data.data.whatsappNumber) {
+          setWhatsappNumber(res.data.data.whatsappNumber);
+        }
+      } catch (error) {
+        console.error("Error fetching settings for Navbar", error);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token'); 
@@ -62,7 +84,7 @@ const Navbar = () => {
         {/* =========================================
             MAIN HEADER ROW (LOGO, SEARCH, ICONS)
         ========================================= */}
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex justify-between items-center gap-4 border-b border-[#8b1818]/10 md:border-none relative bg-[#fcfaf5] z-20">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex flex-wrap justify-between items-center gap-4 border-b border-[#8b1818]/10 md:border-none relative bg-[#fcfaf5] z-20">
           
           {/* Mobile Menu Toggle Button (Left) */}
           <div className="flex-1 md:hidden">
@@ -75,23 +97,45 @@ const Navbar = () => {
           </div>
 
           {/* Logo (Center) */}
-          <Link to="/" className="flex-shrink-0 mx-auto" onClick={() => { setIsMobileMenuOpen(false); setIsMobileSearchOpen(false); }}>
+          <Link to="/" className="flex-shrink-0 mx-auto md:mx-0" onClick={() => { setIsMobileMenuOpen(false); setIsMobileSearchOpen(false); }}>
             <img src={logo} alt="Arpan Cart Logo" className="h-10 md:h-14 w-auto object-contain" />
           </Link>
 
-          {/* Desktop Search Bar */}
-          <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-grow max-w-xl mx-4 items-center bg-white border border-orange-200 rounded-sm px-3 py-2 focus-within:border-[#f7941d] transition-all shadow-sm">
-            <input 
-              type="text" 
-              placeholder="Search Pooja Samagri..." 
-              value={searchQuery} 
-              onChange={(e) => setSearchQuery(e.target.value)} 
-              className="w-full outline-none text-sm bg-transparent text-gray-700 placeholder-gray-400" 
-            />
-            <button type="submit" className="text-[#8b1818] hover:text-[#f7941d] transition-colors ml-2">
-              <Search className="w-5 h-5" />
-            </button>
-          </form>
+          {/* Desktop Search Bar & Naye Buttons */}
+          <div className="hidden md:flex flex-grow max-w-2xl mx-4 items-center gap-3">
+            <form onSubmit={handleSearchSubmit} className="flex-grow flex items-center bg-white border border-orange-200 rounded-sm px-3 py-2 focus-within:border-[#f7941d] transition-all shadow-sm">
+              <input 
+                type="text" 
+                placeholder="Search Pooja Samagri..." 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+                className="w-full outline-none text-sm bg-transparent text-gray-700 placeholder-gray-400" 
+              />
+              <button type="submit" className="text-[#8b1818] hover:text-[#f7941d] transition-colors ml-2">
+                <Search className="w-5 h-5" />
+              </button>
+            </form>
+
+            {/* 🔥 NAYA: Send List on WhatsApp Button */}
+            <a 
+              href={`https://wa.me/${whatsappNumber}?text=Hare%20Krishna!%20Mujhe%20apni%20pooja%20samagri%20ki%20list%20bhejni%20hai:`}
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-[#25D366] hover:bg-[#1ebd5a] text-white px-3 py-2.5 rounded-sm text-xs font-bold whitespace-nowrap shadow-sm transition-colors"
+            >
+              <MessageCircle className="w-4 h-4" /> Send List
+            </a>
+
+            {/* 🔥 NAYA: Pandit Ji Booking Button */}
+            <a 
+              href={`https://wa.me/${whatsappNumber}?text=Pranam!%20Mujhe%20Pandit%20Ji%20book%20karne%20ke%20liye%20enquiry%20karni%20hai.`}
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-[#f7941d] hover:bg-[#e0861a] text-white px-3 py-2.5 rounded-sm text-xs font-bold whitespace-nowrap shadow-sm transition-colors"
+            >
+              <CalendarClock className="w-4 h-4" /> Book Pandit Ji
+            </a>
+          </div>
 
           {/* Right Side Icons (Search, User & Cart) */}
           <div className="flex items-center justify-end gap-4 md:gap-6 flex-1 md:flex-none">
@@ -104,7 +148,7 @@ const Navbar = () => {
               {isMobileSearchOpen ? <X className="w-6 h-6" /> : <Search className="w-6 h-6" />}
             </button>
 
-            {/* 🔴 NAYA: User Icon sirf Desktop par dikhega */}
+            {/* User Icon (Desktop) */}
             <Link to={token ? "/dashboard" : "/login"} className="hidden md:block text-[#8b1818] hover:text-[#f7941d] transition-colors">
               <User className="w-6 h-6" />
             </Link>
@@ -147,14 +191,14 @@ const Navbar = () => {
         </div>
 
         {/* =========================================
-            MOBILE SLIDING SEARCH BAR
+            MOBILE SLIDING SEARCH BAR (Updated with Mobile Buttons)
         ========================================= */}
         <div 
           className={`md:hidden absolute w-full left-0 bg-[#fcfaf5] border-b border-gray-200 transition-all duration-300 ease-in-out z-10 shadow-md ${
             isMobileSearchOpen ? 'translate-y-0 opacity-100 pointer-events-auto' : '-translate-y-full opacity-0 pointer-events-none'
           }`}
         >
-          <div className="p-4">
+          <div className="p-4 flex flex-col gap-3">
             <form onSubmit={handleSearchSubmit} className="flex items-center bg-white border border-orange-200 rounded-sm px-3 py-2 shadow-sm focus-within:border-[#f7941d] transition-colors">
               <input 
                 type="text" 
@@ -168,6 +212,16 @@ const Navbar = () => {
                 <Search className="w-5 h-5" />
               </button>
             </form>
+            
+            {/* 🔥 NAYA: Mobile layout me dono buttons */}
+            <div className="flex gap-2">
+              <a href={`https://wa.me/${whatsappNumber}?text=Hare%20Krishna!%20Mujhe%20apni%20pooja%20samagri%20ki%20list%20bhejni%20hai:`} target="_blank" rel="noopener noreferrer" className="flex-1 flex justify-center items-center gap-1.5 bg-[#25D366] text-white py-2 rounded-sm text-[11px] font-bold shadow-sm">
+                <MessageCircle className="w-3 h-3" /> Send List
+              </a>
+              <a href={`https://wa.me/${whatsappNumber}?text=Pranam!%20Mujhe%20Pandit%20Ji%20book%20karne%20ke%20liye%20enquiry%20karni%20hai.`} target="_blank" rel="noopener noreferrer" className="flex-1 flex justify-center items-center gap-1.5 bg-[#f7941d] text-white py-2 rounded-sm text-[11px] font-bold shadow-sm">
+                <CalendarClock className="w-3 h-3" /> Book Pandit
+              </a>
+            </div>
           </div>
         </div>
 
@@ -184,7 +238,6 @@ const Navbar = () => {
               <Link to="/about" className={`px-6 py-3 border-b border-gray-50 ${isActive('/about') ? 'text-[#c21820] bg-orange-50' : 'hover:bg-gray-50'}`} onClick={() => setIsMobileMenuOpen(false)}>About Us</Link>
               <Link to="/contact" className={`px-6 py-3 border-b border-gray-50 ${isActive('/contact') ? 'text-[#c21820] bg-orange-50' : 'hover:bg-gray-50'}`} onClick={() => setIsMobileMenuOpen(false)}>Contact</Link>
               
-              {/* 🔴 NAYA: Mobile Dashboard Link (Sirf Tab dikhega jab user logged in hoga) */}
               {token && (
                 <Link to="/dashboard" className={`px-6 py-3 border-b border-gray-50 ${isActive('/dashboard') ? 'text-[#c21820] bg-orange-50' : 'hover:bg-gray-50'}`} onClick={() => setIsMobileMenuOpen(false)}>My Dashboard</Link>
               )}

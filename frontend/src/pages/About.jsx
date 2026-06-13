@@ -1,5 +1,6 @@
 import React from 'react';
 import { Leaf, Zap, Truck, Flower2, Sparkles, Clock, ShieldCheck } from 'lucide-react';
+import poojaImage from '../assets/2.png'; 
 
 const About = () => {
   // Leadership Data
@@ -95,7 +96,7 @@ const About = () => {
             {/* Sharp decorative background */}
             <div className="absolute inset-0 bg-[#f7941d] rounded-sm transform translate-x-4 translate-y-4 opacity-20"></div>
             <img 
-              src="https://images.unsplash.com/photo-1590400612999-566b6e4e5b4b?q=80&w=800&auto=format&fit=crop" 
+              src={poojaImage} 
               alt="Pooja Ritual" 
               className="relative w-full h-[450px] object-cover rounded-sm shadow-sm border border-orange-50"
             />
@@ -126,7 +127,7 @@ const About = () => {
           
           <h2 className="text-3xl md:text-4xl font-extrabold mb-6 tracking-wide">ULTRA-FAST DELIVERY IN PATNA 🚀</h2>
           <p className="text-lg text-white/90 max-w-3xl mx-auto mb-10 font-medium leading-relaxed">
-            We proudly offer delivery within minutes in Patna, ensuring that your puja is never delayed — even at the last moment. Whether it’s a planned ritual or a sudden requirement, we are always ready to serve you.
+            We proudly offer delivery within minutes in Patna, ensuring that your puja is never delayed - even at the last moment. Whether it’s a planned ritual or a sudden requirement, we are always ready to serve you.
           </p>
           <div className="flex flex-wrap justify-center gap-6">
             
@@ -223,7 +224,7 @@ const About = () => {
           </div>
           
           <p className="text-gray-600 mt-12 font-medium text-lg relative z-10 max-w-3xl mx-auto border-t border-gray-100 pt-10 leading-relaxed">
-            At Arpan Cart, we are more than just a service — we are your trusted partner in devotion. Simplifying rituals, supporting local artisans, and bringing spirituality closer to your everyday life.
+            At Arpan Cart, we are more than just a service - we are your trusted partner in devotion. Simplifying rituals, supporting local artisans, and bringing spirituality closer to your everyday life.
           </p>
         </div>
 

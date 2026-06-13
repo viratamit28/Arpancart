@@ -1,81 +1,65 @@
-import React, { useContext, useState } from 'react';
-import { CheckCircle, Sparkles, Star } from 'lucide-react';
+import React, { useContext, useState, useEffect } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
+import { CheckCircle2, Leaf, Clock, ShieldCheck, Sparkles, CalendarDays, Loader2, Star } from 'lucide-react';
 
 const Subscriptions = () => {
   const navigate = useNavigate();
   const cartContext = useContext(CartContext);
+  
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [loadingId, setLoadingId] = useState(null);
 
-  // Subscription plans ka data
-  const plans = [
-    {
-      id: "sub-1",
-      name: "Basic Puja Box",
-      price: "499",
-      duration: "per month",
-      description: "Perfect for daily basic rituals and aarti.",
-      features: [
-        "Premium Agarbatti (2 Packets)",
-        "Pure Cow Ghee Diya Batti (30 pcs)",
-        "Kumkum & Haldi Pack",
-        "Camphor (Kapur) 50g",
-        "Standard Delivery (3-5 days)"
-      ],
-      isPopular: false,
-      buttonColor: "bg-transparent border-[2px] border-[#8b1818] text-[#8b1818] hover:bg-[#8b1818] hover:text-white",
-      theme: "border-orange-50 bg-white"
-    },
-    {
-      id: "sub-2",
-      name: "Premium Family Box",
-      price: "999",
-      duration: "per month",
-      description: "Ideal for joint families and festive occasions.",
-      features: [
-        "Everything in Basic Box",
-        "Sandalwood (Chandan) Stick",
-        "Pure Ganga Jal (100ml bottle)",
-        "Brass Puja Bell (Ghanti)",
-        "Free Priority Delivery (1-2 days)",
-        "Special Surprise Gift Every Month"
-      ],
-      isPopular: true, 
-      buttonColor: "bg-[#f7941d] border-[2px] border-[#f7941d] text-white hover:bg-[#e0861a] hover:border-[#e0861a]",
-      theme: "border-[#f7941d] bg-[#fffbf4] shadow-[0_15px_35px_rgba(247,148,29,0.15)] transform md:-translate-y-4"
-    },
-    {
-      id: "sub-3",
-      name: "Temple Standard",
-      price: "1999",
-      duration: "per month",
-      description: "Bulk samagri for temples or large monthly hawans.",
-      features: [
-        "Everything in Premium Box",
-        "Hawan Samagri (1 kg)",
-        "Mango Wood (Aam ki Lakdi)",
-        "Premium Dry Fruits Prasad",
-        "24/7 Dedicated Support",
-        "Cancel or Pause Anytime"
-      ],
-      isPopular: false,
-      buttonColor: "bg-transparent border-[2px] border-[#8b1818] text-[#8b1818] hover:bg-[#8b1818] hover:text-white",
-      theme: "border-orange-50 bg-white"
-    }
-  ];
+  // Start Date Logic (Default to tomorrow)
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const defaultStartDate = tomorrow.toISOString().split('T')[0];
+  const [startDate, setStartDate] = useState(defaultStartDate);
 
-  // 🎯 Add to Cart Logic for Subscriptions
+  const API_BASE_URL = 'http://localhost:5000/api';
+
+  // 1. Fetch Plans from Backend (Updated URL as per new route)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    const fetchPlans = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/subscriptions/plans`);
+        if (res.data && res.data.success) {
+          setPlans(res.data.data.filter(plan => plan.isActive !== false));
+        } else if (Array.isArray(res.data)) {
+          setPlans(res.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch subscription plans:", err);
+        setError("Plans load nahi ho paaye. Kripya thodi der baad try karein.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPlans();
+  }, []);
+
+  // 2. Add to Cart Logic
   const handleSubscribe = (plan) => {
+    if (!startDate) {
+      alert("Please select a start date for your flower delivery.");
+      return;
+    }
+
     setLoadingId(plan.id);
 
-    // Context API me properly format karke bhejna taaki cart me sahi se dikhe
     const subscriptionProduct = {
-      id: plan.id,
-      title: `${plan.name} (Subscription)`,
+      id: `sub-${plan.id}`, 
+      title: `${plan.name} (Starts: ${startDate})`,
       price: parseInt(plan.price),
       category: "Subscription",
-      imageUrl: "https://placehold.co/300x300/fffbf4/8b1818.jpg&text=Subscription+Box", // Fallback image for cart
+      isSubscription: true,
+      startDate: startDate,       
+      durationDays: plan.durationDays, 
+      imageUrl: "https://images.unsplash.com/photo-1605806616949-1e87b487cb2a?q=80&w=800&auto=format&fit=crop", 
     };
 
     if (cartContext.addToCart) {
@@ -88,11 +72,9 @@ const Subscriptions = () => {
         }
         return [...prev, { ...subscriptionProduct, quantity: 1 }];
       });
-      // Tooltip manually trigger agar addToCart function nahi hai
       if(cartContext.setShowCartIndicator) cartContext.setShowCartIndicator(true);
     }
 
-    // 1 second loader dikha ke user ko sidha Cart pe bhej do
     setTimeout(() => {
       setLoadingId(null);
       navigate('/cart');
@@ -100,104 +82,178 @@ const Subscriptions = () => {
   };
 
   return (
-    <div className="bg-[#fcfaf5] min-h-screen py-20 px-6 md:px-12">
+    <div className="bg-[#fcfaf5] min-h-screen pb-20">
       
       <style>
         {`
-          @keyframes fadeUpCards {
+          @keyframes slideUpCards {
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
           }
           .animate-fade-up-card {
-            animation: fadeUpCards 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: slideUpCards 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             opacity: 0;
           }
         `}
       </style>
 
-      <div className="max-w-7xl mx-auto">
-        
-        {/* =========================================
-            HEADER SECTION (Sharp Corporate Decor)
-        ========================================= */}
-        <div className="flex items-center justify-center mb-16 animate-fade-up-card">
-          <div className="hidden md:flex items-center">
-            <div className="w-16 lg:w-32 h-[1px] bg-gradient-to-l from-[#8b1818] to-transparent opacity-50"></div>
-            <div className="w-2 h-2 bg-[#f7941d] transform rotate-45 mx-4 shadow-sm"></div>
+      {/* Hero Section */}
+      <div className="w-full bg-gradient-to-r from-[#8b1818] to-[#5a0f0f] py-20 px-4 md:px-8 shadow-md text-center">
+        <div className="max-w-3xl mx-auto animate-fade-up-card">
+          <div className="inline-flex items-center justify-center bg-white/10 p-4 rounded-full backdrop-blur-md mb-6 shadow-inner border border-white/20">
+            <Sparkles className="w-8 h-8 text-[#f7941d] drop-shadow-md" />
           </div>
-          
-          <h1 className="text-3xl md:text-[40px] font-extrabold text-[#8b1818] px-4 text-center tracking-wide uppercase">
-            Monthly Subscriptions
+          <h1 className="text-4xl md:text-5xl font-extrabold text-white uppercase tracking-widest drop-shadow-lg mb-4">
+            Daily Fresh Flowers
           </h1>
+          <p className="text-sm md:text-lg text-white/90 font-medium leading-relaxed max-w-2xl mx-auto">
+            Subscribe once and get farm-fresh, pure flowers delivered silently to your doorstep every morning before 7 AM for your daily puja.
+          </p>
+        </div>
+      </div>
 
-          <div className="hidden md:flex items-center">
-            <div className="w-2 h-2 bg-[#f7941d] transform rotate-45 mx-4 shadow-sm"></div>
-            <div className="w-16 lg:w-32 h-[1px] bg-gradient-to-r from-[#8b1818] to-transparent opacity-50"></div>
+      <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-12 -mt-8 relative z-10">
+        
+        {/* Features Trust Bar */}
+        <div className="bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-orange-50 p-6 md:p-10 mb-16 animate-fade-up-card" style={{ animationDelay: '0.1s' }}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="flex flex-col items-center text-center">
+              <Leaf className="w-8 h-8 text-[#f7941d] mb-3" />
+              <h3 className="font-extrabold text-gray-800 text-sm md:text-base">100% Fresh</h3>
+            </div>
+            <div className="flex flex-col items-center text-center">
+              <Clock className="w-8 h-8 text-[#f7941d] mb-3" />
+              <h3 className="font-extrabold text-gray-800 text-sm md:text-base">Morning Delivery</h3>
+            </div>
+            <div className="flex flex-col items-center text-center">
+              <CalendarDays className="w-8 h-8 text-[#f7941d] mb-3" />
+              <h3 className="font-extrabold text-gray-800 text-sm md:text-base">Pause Anytime</h3>
+            </div>
+            <div className="flex flex-col items-center text-center">
+              <ShieldCheck className="w-8 h-8 text-[#f7941d] mb-3" />
+              <h3 className="font-extrabold text-gray-800 text-sm md:text-base">Zero Delivery Fee</h3>
+            </div>
           </div>
         </div>
 
-        <p className="text-gray-600 max-w-2xl mx-auto text-center font-medium text-lg mb-16 animate-fade-up-card" style={{ animationDelay: "0.1s" }}>
-          Never run out of essential pooja samagri. Subscribe once, and receive a fresh, pure, and blessed box at your doorstep every month.
-        </p>
-
-        {/* =========================================
-            PRICING CARDS GRID (Sharp Edges)
-        ========================================= */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10 max-w-6xl mx-auto pt-4">
-          {plans.map((plan, index) => (
-            <div 
-              key={plan.id} 
-              className={`relative rounded-sm p-8 border-[2px] transition-all duration-500 hover:shadow-[0_15px_35px_rgba(139,24,24,0.08)] flex flex-col group animate-fade-up-card ${plan.theme}`}
-              style={{ animationDelay: `${0.2 + index * 0.15}s` }}
-            >
-              {/* 'Most Popular' Badge - Sharp & Professional */}
-              {plan.isPopular && (
-                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <span className="bg-gradient-to-r from-[#c21820] to-[#8b1818] text-white text-xs font-extrabold px-6 py-2 rounded-sm uppercase tracking-widest flex items-center gap-2 shadow-md">
-                    <Star className="w-3.5 h-3.5 fill-current" /> Most Popular
-                  </span>
-                </div>
-              )}
-
-              {/* Plan Header */}
-              <div className="text-center mb-8 border-b border-gray-100 pb-8 mt-2">
-                <h3 className="text-xl font-extrabold text-gray-800 mb-4 tracking-wide group-hover:text-[#8b1818] transition-colors">{plan.name}</h3>
-                <div className="flex items-end justify-center gap-1">
-                  <span className="text-4xl font-extrabold text-[#c21820]">₹{plan.price}</span>
-                  <span className="text-gray-500 font-bold mb-1">/{plan.duration}</span>
-                </div>
-                <p className="text-gray-500 text-sm mt-4 font-medium h-10">{plan.description}</p>
-              </div>
-
-              {/* Features List */}
-              <div className="flex-grow">
-                <ul className="space-y-4 mb-8">
-                  {plan.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-3">
-                      <CheckCircle className={`w-5 h-5 flex-shrink-0 ${plan.isPopular ? 'text-[#f7941d]' : 'text-[#8b1818]'}`} />
-                      <span className="text-gray-600 font-bold text-sm">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Action Button (Sharp & Corporate) */}
-              <button 
-                onClick={() => handleSubscribe(plan)}
-                disabled={loadingId === plan.id}
-                className={`w-full text-center font-extrabold py-3.5 rounded-sm shadow-sm transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 ${plan.buttonColor} ${loadingId === plan.id ? 'opacity-80 cursor-wait' : ''}`}
-              >
-                {loadingId === plan.id ? (
-                  <><div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div> Processing...</>
-                ) : (
-                  <>Select {plan.name.split(' ')[0]} Plan <Sparkles className="w-4 h-4" /></>
-                )}
-              </button>
-
+        {/* Step 1: Start Date */}
+        <div className="max-w-2xl mx-auto mb-16 animate-fade-up-card" style={{ animationDelay: "0.2s" }}>
+          <div className="bg-white p-6 md:p-8 rounded-2xl border border-orange-100 shadow-[0_8px_30px_rgba(247,148,29,0.08)] relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1.5 h-full bg-[#f7941d]"></div>
+            <h3 className="text-[#8b1818] font-extrabold text-xl mb-2 flex items-center gap-2">
+              <span className="bg-[#8b1818] text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">1</span> 
+              Select Start Date
+            </h3>
+            <p className="text-sm text-gray-500 mb-6 font-medium ml-8">Choose when you want your subscription to start.</p>
+            
+            <div className="ml-8 relative">
+              <CalendarDays className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#f7941d] w-5 h-5 pointer-events-none" />
+              <input 
+                type="date" 
+                min={defaultStartDate}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full bg-[#fcfaf5] border border-orange-200 py-4 pl-12 pr-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#f7941d] font-bold text-gray-700 transition-colors cursor-pointer shadow-inner"
+              />
             </div>
-          ))}
+          </div>
         </div>
 
+        {/* Step 2: Choose Plan */}
+        <div className="text-center mb-10 animate-fade-up-card" style={{ animationDelay: '0.3s' }}>
+          <h3 className="text-[#8b1818] font-extrabold text-2xl flex items-center justify-center gap-2">
+            <span className="bg-[#8b1818] text-white w-7 h-7 rounded-full flex items-center justify-center text-base">2</span> 
+            Choose Your Plan
+          </h3>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center items-center py-10">
+            <Loader2 className="w-12 h-12 text-[#8b1818] animate-spin" />
+          </div>
+        ) : error ? (
+          <div className="text-center bg-red-50 text-red-600 font-bold p-6 rounded-xl border border-red-100 max-w-2xl mx-auto">
+            {error}
+          </div>
+        ) : plans.length === 0 ? (
+          <div className="text-center py-10">
+            <p className="text-gray-500 font-bold text-lg">Currently, no subscription plans are active. Please check back later!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {plans.map((plan, index) => {
+              const isPopular = plan.durationDays === 30 || index === 1;
+
+              return (
+                <div 
+                  key={plan.id} 
+                  className={`relative flex flex-col bg-white rounded-2xl transition-all duration-500 animate-fade-up-card ${
+                    isPopular 
+                      ? 'border-2 border-[#f7941d] shadow-[0_15px_40px_rgba(247,148,29,0.15)] transform md:-translate-y-4 z-10' 
+                      : 'border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-lg mt-4'
+                  }`}
+                  style={{ animationDelay: `${(index + 4) * 0.15}s` }}
+                >
+                  {isPopular && (
+                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-[#c21820] to-[#8b1818] text-white px-6 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-widest shadow-md z-20 flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 fill-current" /> Most Popular
+                    </div>
+                  )}
+
+                  <div className={`p-8 pb-6 rounded-t-2xl text-center ${isPopular ? 'bg-orange-50/40' : ''}`}>
+                    <h3 className="text-2xl font-extrabold text-gray-800 uppercase tracking-wide mb-2">{plan.name}</h3>
+                    <p className="text-xs font-extrabold text-[#f7941d] bg-orange-100 inline-block px-3 py-1 rounded-sm mb-6 uppercase tracking-wider">
+                      {plan.durationDays} Days Plan
+                    </p>
+                    
+                    <div className="flex justify-center items-end gap-1">
+                      <span className="text-4xl font-black text-[#8b1818]">₹{plan.price}</span>
+                      <span className="text-gray-500 font-bold mb-1">/ total</span>
+                    </div>
+                    <p className="text-xs font-bold text-gray-400 mt-2">
+                      (Approx ₹{Math.round(plan.price / plan.durationDays)} per day)
+                    </p>
+                  </div>
+
+                  <div className="w-full h-[1px] bg-gray-100"></div>
+
+                  <div className="p-8 flex-grow flex flex-col">
+                    <ul className="space-y-4 mb-8 flex-grow">
+                      <li className="flex items-start gap-3">
+                        <CheckCircle2 className={`w-5 h-5 flex-shrink-0 mt-0.5 ${isPopular ? 'text-[#f7941d]' : 'text-green-500'}`} />
+                        <span className="text-gray-600 font-medium text-sm">Fresh assorted puja flowers</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <CheckCircle2 className={`w-5 h-5 flex-shrink-0 mt-0.5 ${isPopular ? 'text-[#f7941d]' : 'text-green-500'}`} />
+                        <span className="text-gray-600 font-medium text-sm">Free morning delivery</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <CheckCircle2 className={`w-5 h-5 flex-shrink-0 mt-0.5 ${isPopular ? 'text-[#f7941d]' : 'text-green-500'}`} />
+                        <span className="text-gray-600 font-medium text-sm">Cancel or pause anytime</span>
+                      </li>
+                    </ul>
+
+                    <button 
+                      onClick={() => handleSubscribe(plan)}
+                      disabled={loadingId === plan.id}
+                      className={`w-full py-4 rounded-xl font-extrabold text-sm uppercase tracking-widest transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 ${
+                        isPopular 
+                          ? 'bg-gradient-to-r from-[#f7941d] to-[#e0861a] text-white shadow-[0_8px_20px_rgba(247,148,29,0.3)] hover:shadow-[0_12px_25px_rgba(247,148,29,0.4)]' 
+                          : 'bg-transparent text-[#8b1818] border-[2px] border-[#8b1818] hover:bg-[#8b1818] hover:text-white'
+                      } ${loadingId === plan.id ? 'opacity-80 cursor-wait' : ''}`}
+                    >
+                      {loadingId === plan.id ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+                      ) : (
+                        <>Subscribe Now <Sparkles className="w-4 h-4" /></>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

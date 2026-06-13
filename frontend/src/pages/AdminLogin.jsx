@@ -25,7 +25,7 @@ const AdminLogin = () => {
 
     try {
       // 🔥 Naye Railway Admin Login API ko hit kar rahe hain
-      const response = await axios.post('https://arpancart-production.up.railway.app/api/auth/admin-login', formData);
+      const response = await axios.post('http://localhost:5000/api/auth/admin-login', formData);
       
       if (response.data.success) {
         // Admin ka token aur details localStorage me save karo
