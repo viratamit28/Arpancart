@@ -28,7 +28,7 @@ const Checkout = () => {
     fullName: '', email: '', phone: '', address: '', city: '', state: '', zipCode: ''
   });
 
-  const API_BASE_URL = 'http://localhost:5000/api';
+  const API_BASE_URL = 'https://arpancart-production.up.railway.app/api';
 
   // =========================================
   // 🧮 ADVANCED MATH CALCULATIONS

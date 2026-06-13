@@ -24,7 +24,7 @@ const ProductDetails = () => {
 
     const fetchSingleProduct = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/products');
+        const response = await axios.get('https://arpancart-production.up.railway.app/api/products');
         
         let allProducts = [];
         if (Array.isArray(response.data)) allProducts = response.data;

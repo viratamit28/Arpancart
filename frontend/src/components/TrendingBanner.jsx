@@ -18,7 +18,7 @@ const TrendingBanner = () => {
   const [isHovered, setIsHovered] = useState(false);
   
   const navigate = useNavigate();
-  const API_BASE_URL = 'http://localhost:5000/api'; 
+  const API_BASE_URL = 'https://arpancart-production.up.railway.app/api'; 
 
   // 1. Data Fetching Logic
   useEffect(() => {

@@ -19,7 +19,7 @@ const Navbar = () => {
   const [whatsappNumber, setWhatsappNumber] = useState('910000000000'); // Default fallback
 
   // const API_BASE_URL = 'https://arpancart-production.up.railway.app/api';
-  const API_BASE_URL = 'http://localhost:5000/api';
+  const API_BASE_URL = 'https://arpancart-production.up.railway.app/api';
 
   useEffect(() => {
     // 🌐 Fetch settings from backend

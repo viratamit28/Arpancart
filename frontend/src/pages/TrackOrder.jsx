@@ -11,7 +11,7 @@ const TrackOrder = () => {
   const [orderData, setOrderData] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const API_BASE_URL = 'http://localhost:5000/api';
+  const API_BASE_URL = 'https://arpancart-production.up.railway.app/api';
 
   // Order Timeline Steps
   const orderSteps = [

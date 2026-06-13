@@ -37,7 +37,7 @@ const Cart = () => {
     setCouponMessage({ type: '', text: '' });
     
     try {
-      const res = await axios.post('http://localhost:5000/api/apply-coupon', {
+      const res = await axios.post('https://arpancart-production.up.railway.app/api/apply-coupon', {
         code: couponInput,
         cartTotal: itemsTotal 
       });

@@ -34,8 +34,8 @@ const Shop = () => {
     const fetchData = async () => {
       try {
         const [productsRes, categoriesRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/products'),
-          axios.get('http://localhost:5000/api/categories').catch(() => null) 
+          axios.get('https://arpancart-production.up.railway.app/api/products'),
+          axios.get('https://arpancart-production.up.railway.app/api/categories').catch(() => null) 
         ]);
         
         let productsArray = [];
