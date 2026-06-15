@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, Sparkles, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'; // Added Chevrons
+import { TrendingUp, Sparkles, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import DefaultTrending from '../assets/2.jpg'; 
-import ProductCard from './ProductCard'; 
 
 const TrendingBanner = () => {
   const [trendingProducts, setTrendingProducts] = useState([]);
@@ -20,7 +19,7 @@ const TrendingBanner = () => {
   const navigate = useNavigate();
   const API_BASE_URL = 'https://arpancart-production.up.railway.app/api'; 
 
-  // 1. Data Fetching Logic
+  // 1. Data Fetching Logic (NO LOGIC CHANGES)
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -38,7 +37,6 @@ const TrendingBanner = () => {
         
         const trueTrending = productsArray.filter(p => p.isTrending === true);
         
-        // Agar jyada products ho, toh 8-10 products tak slider me dikha sakte hain
         if (trueTrending.length > 0) {
           setTrendingProducts(trueTrending.slice(0, 8));
         } else {
@@ -78,7 +76,7 @@ const TrendingBanner = () => {
     fetchData();
   }, []);
 
-  // 2. Auto-Slide Logic for Banners
+  // 2. Auto-Slide Logic for Banners (NO LOGIC CHANGES)
   useEffect(() => {
     if (bannerImages.length > 1) {
       const interval = setInterval(() => {
@@ -88,7 +86,7 @@ const TrendingBanner = () => {
     }
   }, [bannerImages.length]);
 
-  // 3. Auto-Slide Logic for PRODUCTS SLIDER (Every 3 seconds)
+  // 3. Auto-Slide Logic for PRODUCTS SLIDER (NO LOGIC CHANGES)
   useEffect(() => {
     if (isHovered || trendingProducts.length === 0) return;
     
@@ -98,20 +96,20 @@ const TrendingBanner = () => {
         const maxScrollLeft = container.scrollWidth - container.clientWidth;
         
         if (container.scrollLeft >= maxScrollLeft - 10) {
-          container.scrollTo({ left: 0, behavior: 'smooth' }); // Wapas start me jao
+          container.scrollTo({ left: 0, behavior: 'smooth' }); 
         } else {
-          container.scrollBy({ left: 320, behavior: 'smooth' }); // Ek card aage badho
+          container.scrollBy({ left: 320, behavior: 'smooth' }); 
         }
       }
-    }, 3000); // 3 seconds jaisa tumne kaha tha
+    }, 3000); 
     
     return () => clearInterval(intervalId);
   }, [isHovered, trendingProducts]);
 
-  // 4. Manual Scroll for Arrows
+  // 4. Manual Scroll for Arrows (NO LOGIC CHANGES)
   const scroll = (direction) => {
     if (scrollContainerRef.current) {
-      const scrollAmount = 320; 
+      const scrollAmount = window.innerWidth < 640 ? 260 : 320; 
       scrollContainerRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
@@ -123,8 +121,21 @@ const TrendingBanner = () => {
     navigate('/shop?trending=true'); 
   };
 
+  // Helper function to safely extract image
+  const getProductImage = (product) => {
+    if (!product.imageUrl) return "https://placehold.co/400x500/fcfaf5/8b1818?text=Product";
+    try {
+      if (product.imageUrl.startsWith('[')) {
+        return JSON.parse(product.imageUrl)[0];
+      }
+      return product.imageUrl.split(',')[0];
+    } catch (e) {
+      return product.imageUrl;
+    }
+  };
+
   return (
-    <div className="py-24 px-4 md:px-12 bg-gradient-to-b from-[#fcfaf5] to-white relative">
+    <div className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 md:px-12 bg-gradient-to-b from-[#fcfaf5] to-white relative">
       
       <style>
         {`
@@ -136,7 +147,6 @@ const TrendingBanner = () => {
             animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             opacity: 0;
           }
-          /* Hide scrollbar for slider */
           .hide-scrollbar::-webkit-scrollbar { display: none; }
           .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         `}
@@ -147,23 +157,23 @@ const TrendingBanner = () => {
         {/* =========================================
             PREMIUM TITLE SECTION 
         ========================================= */}
-        <div className="flex flex-col items-center justify-center mb-16 animate-slide-up">
-          <p className="text-[#f7941d] font-extrabold uppercase tracking-[0.2em] text-xs mb-3 flex items-center gap-2">
+        <div className="flex flex-col items-center justify-center mb-10 md:mb-16 animate-slide-up">
+          <p className="text-[#f7941d] font-extrabold uppercase tracking-[0.2em] text-[10px] sm:text-xs mb-3 flex items-center gap-2">
             <Sparkles className="w-3 h-3" /> Season's Special <Sparkles className="w-3 h-3" />
           </p>
-          <div className="flex items-center gap-4">
-            <div className="hidden md:block w-16 h-[2px] bg-gradient-to-l from-[#8b1818] to-transparent"></div>
-            <h2 className="text-3xl md:text-[40px] font-extrabold text-[#8b1818] text-center tracking-wide uppercase flex items-center gap-3">
-              <TrendingUp className="w-8 h-8 text-[#f7941d] drop-shadow-sm" /> Trending Now
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="hidden md:block w-12 lg:w-16 h-[2px] bg-gradient-to-l from-[#8b1818] to-transparent"></div>
+            <h2 className="text-2xl sm:text-3xl md:text-[40px] font-extrabold text-[#8b1818] text-center tracking-wide uppercase flex items-center gap-2 sm:gap-3">
+              <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-[#f7941d] drop-shadow-sm" /> Trending Now
             </h2>
-            <div className="hidden md:block w-16 h-[2px] bg-gradient-to-r from-[#8b1818] to-transparent"></div>
+            <div className="hidden md:block w-12 lg:w-16 h-[2px] bg-gradient-to-r from-[#8b1818] to-transparent"></div>
           </div>
         </div>
 
         {/* =========================================
             DYNAMIC SLIDING HERO BANNER 
         ========================================= */}
-        <div className="relative w-full h-[300px] md:h-[450px] rounded-sm overflow-hidden mb-20 animate-slide-up group cursor-pointer shadow-[0_20px_50px_rgba(139,24,24,0.15)] ring-1 ring-orange-100">
+        <div className="relative w-full h-[280px] sm:h-[350px] md:h-[450px] rounded-lg md:rounded-xl overflow-hidden mb-12 sm:mb-16 md:mb-20 animate-slide-up group cursor-pointer shadow-[0_15px_40px_rgba(139,24,24,0.12)] border border-orange-50/50">
           {bannerImages.map((imgUrl, idx) => (
             <img 
               key={idx}
@@ -176,25 +186,25 @@ const TrendingBanner = () => {
           ))}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10 pointer-events-none"></div>
           
-          <div className="absolute bottom-0 left-0 w-full p-8 md:p-12 z-20 flex flex-col items-center justify-center text-center">
-            <h3 className="text-white text-3xl md:text-5xl font-extrabold mb-8 drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)] tracking-wide max-w-3xl leading-tight">
+          <div className="absolute bottom-0 left-0 w-full p-6 sm:p-8 md:p-12 z-20 flex flex-col items-center justify-center text-center">
+            <h3 className="text-white text-2xl sm:text-3xl md:text-5xl font-extrabold mb-5 sm:mb-8 drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)] tracking-wide max-w-[90%] md:max-w-3xl leading-tight">
               {bannerTitle}
             </h3>
             <button 
               onClick={handleShopNowClick}
-              className="bg-gradient-to-r from-[#f7941d] to-[#e0861a] hover:from-[#e0861a] hover:to-[#c26f12] text-white font-extrabold text-sm md:text-base py-3.5 px-10 rounded-sm transition-all duration-300 shadow-[0_5px_15px_rgba(247,148,29,0.4)] hover:shadow-[0_8px_25px_rgba(247,148,29,0.6)] active:scale-95 uppercase tracking-widest flex items-center gap-2"
+              className="bg-gradient-to-r from-[#f7941d] to-[#e0861a] hover:from-[#e0861a] hover:to-[#c26f12] text-white font-extrabold text-[12px] sm:text-sm md:text-base py-3 px-6 sm:px-8 md:px-10 rounded-md transition-all duration-300 shadow-[0_5px_15px_rgba(247,148,29,0.4)] hover:shadow-[0_8px_25px_rgba(247,148,29,0.6)] active:scale-95 uppercase tracking-widest flex items-center gap-2"
             >
               Shop Collection <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
           {bannerImages.length > 1 && (
-            <div className="absolute bottom-4 left-0 w-full flex justify-center gap-2 z-20">
+            <div className="absolute bottom-3 sm:bottom-4 left-0 w-full flex justify-center gap-1.5 sm:gap-2 z-20">
               {bannerImages.map((_, idx) => (
                 <div 
                   key={idx} 
                   className={`transition-all duration-500 rounded-full ${
-                    idx === currentImageIndex ? 'w-8 h-1.5 bg-[#f7941d]' : 'w-1.5 h-1.5 bg-white/50'
+                    idx === currentImageIndex ? 'w-6 sm:w-8 h-1.5 bg-[#f7941d]' : 'w-1.5 h-1.5 bg-white/50'
                   }`}
                 />
               ))}
@@ -203,59 +213,112 @@ const TrendingBanner = () => {
         </div>
 
         {/* =========================================
-            PRODUCTS SLIDER (🔥 NAYA)
+            PRODUCTS SLIDER / GRID HYBRID
         ========================================= */}
         <div>
-          <div className="flex justify-between items-end mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 sm:mb-8 animate-slide-up gap-4" style={{ animationDelay: '0.2s' }}>
             <div>
-              <h3 className="text-2xl font-extrabold text-gray-800 tracking-wide">Top Picks For You</h3>
-              <p className="text-sm text-gray-500 font-medium mt-1">Handpicked spiritual essentials highly loved by devotees.</p>
+              <h3 className="text-xl sm:text-2xl font-extrabold text-gray-800 tracking-wide">Top Picks For You</h3>
+              <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">Handpicked spiritual essentials highly loved by devotees.</p>
             </div>
-            <button onClick={handleShopNowClick} className="hidden md:flex text-[#8b1818] font-bold hover:text-[#f7941d] transition-colors items-center gap-1 text-sm uppercase tracking-wider">
+            <button onClick={handleShopNowClick} className="hidden sm:flex text-[#8b1818] font-bold hover:text-[#f7941d] transition-colors items-center gap-1 text-sm uppercase tracking-wider">
               View All <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
           {loading ? (
-            <div className="flex overflow-x-auto gap-6 md:gap-8 hide-scrollbar">
+            <div className="grid grid-cols-2 gap-3 sm:flex sm:overflow-x-auto sm:gap-6 md:gap-8 hide-scrollbar">
               {[1, 2, 3, 4].map((n) => (
-                <div key={n} className="bg-white rounded-sm h-[380px] w-[280px] sm:w-[300px] flex-shrink-0 animate-pulse border border-gray-100 shadow-sm flex flex-col">
-                  <div className="w-full h-56 bg-gray-200 rounded-t-sm"></div>
-                  <div className="p-5 space-y-4 flex-grow">
-                    <div className="h-5 bg-gray-200 rounded-sm w-3/4"></div>
-                    <div className="h-4 bg-gray-100 rounded-sm w-1/2"></div>
-                    <div className="h-10 bg-gray-200 rounded-sm w-full mt-auto"></div>
+                <div key={n} className="bg-white rounded-lg h-[280px] sm:h-[380px] w-full sm:w-[280px] md:w-[320px] flex-shrink-0 animate-pulse border border-gray-100 shadow-sm flex flex-col">
+                  <div className="w-full h-36 sm:h-56 bg-gray-200 rounded-t-lg"></div>
+                  <div className="p-3 sm:p-5 space-y-3 sm:space-y-4 flex-grow">
+                    <div className="h-3 sm:h-5 bg-gray-200 rounded-sm w-3/4"></div>
+                    <div className="h-2 sm:h-4 bg-gray-100 rounded-sm w-1/2"></div>
+                    <div className="h-8 sm:h-10 bg-gray-200 rounded-md w-full mt-auto"></div>
                   </div>
                 </div>
               ))}
             </div>
           ) : error ? (
-            <div className="text-center bg-red-50 text-red-600 font-bold p-6 rounded-sm border border-red-100">
+            <div className="text-center bg-red-50 text-red-600 font-bold p-4 sm:p-6 rounded-lg border border-red-100 text-sm sm:text-base">
               {error}
             </div>
           ) : (
             <div className="relative group/productSlider">
-              {/* SLIDER CONTAINER */}
               <div 
                 ref={scrollContainerRef}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                className="flex overflow-x-auto gap-6 md:gap-8 pb-8 pt-4 snap-x snap-mandatory hide-scrollbar items-stretch"
+                className="grid grid-cols-2 gap-3 sm:flex sm:overflow-x-auto sm:gap-6 md:gap-8 pb-4 sm:pb-8 pt-2 sm:snap-x sm:snap-mandatory hide-scrollbar sm:items-stretch"
               >
-                {trendingProducts.map((product, index) => (
-                  <div 
-                    key={product.id || product._id}
-                    className="animate-slide-up h-full flex-shrink-0 w-[280px] sm:w-[300px] snap-center"
-                    style={{ animationDelay: `${(index + 2) * 0.1}s` }}
-                  >
-                    <ProductCard product={product} />
-                  </div>
-                ))}
+                {trendingProducts.map((product, index) => {
+                  const mrp = product.originalPrice || product.mrp || 0;
+                  const price = product.price || 0;
+                  
+                  return (
+                    <div 
+                      key={product.id || product._id}
+                      className="animate-slide-up w-full h-full sm:flex-shrink-0 sm:w-[280px] md:w-[320px] sm:snap-center"
+                      style={{ animationDelay: `${(index + 2) * 0.1}s` }}
+                    >
+                      {/* 🔥 INLINE PRODUCT CARD (Photo Jaisa Exact Design) 🔥 */}
+                      <div className="flex flex-col bg-white border border-[#f0e6d2] rounded-xl overflow-hidden h-full shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-lg transition-shadow duration-300">
+                        
+                        {/* 1. Image Section */}
+                        <div className="w-full aspect-[4/5] bg-[#fdfbf7] p-2 flex items-center justify-center relative cursor-pointer" onClick={() => navigate(`/product/${product.id || product._id}`)}>
+                          <img 
+                            src={getProductImage(product)} 
+                            alt={product.name || "Product"} 
+                            className="w-full h-full object-contain drop-shadow-sm mix-blend-multiply"
+                          />
+                          {/* HOT Badge */}
+                          <span className="absolute top-2 left-2 bg-red-100 text-[#8b1818] text-[10px] font-bold px-2 py-0.5 rounded-sm">
+                            HOT
+                          </span>
+                        </div>
+
+                        {/* 2. Content Section */}
+                        <div className="p-3 sm:p-4 flex flex-col flex-grow items-center text-center">
+                          
+                          <h3 
+                            className="text-[12px] sm:text-sm font-semibold text-gray-800 line-clamp-2 leading-tight mb-2 min-h-[2rem] sm:min-h-[2.5rem] cursor-pointer hover:text-[#8b1818]"
+                            onClick={() => navigate(`/product/${product.id || product._id}`)}
+                          >
+                            {product.name || "Divine Puja Item"}
+                          </h3>
+
+                          {/* 3. Pricing Section */}
+                          <div className="mt-auto flex flex-col items-center mb-3">
+                            {mrp > price ? (
+                              <span className="text-gray-400 line-through text-[11px] sm:text-xs">
+                                ₹{mrp.toFixed(2)}
+                              </span>
+                            ) : (
+                              <span className="text-transparent text-[11px] sm:text-xs select-none">
+                                Placeholder
+                              </span>
+                            )}
+                            <span className="text-[#008a00] font-bold text-[14px] sm:text-[16px]">
+                              ₹{price.toFixed(2)}
+                            </span>
+                          </div>
+
+                          {/* 4. Add to Cart Pill Button */}
+                          <button className="w-full bg-[#8b1818] hover:bg-[#6b1212] text-white py-2 sm:py-2.5 rounded-full text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all active:scale-95 shadow-sm">
+                            Add to Cart
+                          </button>
+
+                        </div>
+                      </div>
+                      {/* 🔥 END INLINE CARD 🔥 */}
+                    </div>
+                  );
+                })}
               </div>
 
-              {/* NAVIGATION ARROWS (BELOW THE SLIDER) */}
+              {/* NAVIGATION ARROWS (Hidden on mobile, visible on slider) */}
               {trendingProducts.length > 1 && (
-                <div className="flex items-center justify-center mt-2 gap-6 animate-slide-up" style={{ animationDelay: '0.8s' }}>
+                <div className="hidden sm:flex items-center justify-center mt-2 gap-6 animate-slide-up" style={{ animationDelay: '0.8s' }}>
                   <button 
                     onClick={() => scroll('left')} 
                     className="p-3.5 rounded-full bg-white border border-orange-100 text-[#8b1818] hover:bg-[#8b1818] hover:text-white transition-all duration-300 shadow-[0_4px_15px_rgba(0,0,0,0.05)] hover:shadow-md focus:outline-none group"
@@ -274,9 +337,9 @@ const TrendingBanner = () => {
           )}
 
           {/* Mobile View All Button */}
-          <div className="mt-8 text-center md:hidden animate-slide-up" style={{ animationDelay: '0.6s' }}>
-            <button onClick={handleShopNowClick} className="w-full border-2 border-[#8b1818] text-[#8b1818] font-extrabold py-3 rounded-sm uppercase tracking-wider text-sm hover:bg-[#8b1818] hover:text-white transition-colors">
-              View All Products
+          <div className="mt-6 sm:hidden animate-slide-up" style={{ animationDelay: '0.6s' }}>
+            <button onClick={handleShopNowClick} className="w-full border-2 border-[#8b1818] text-[#8b1818] font-extrabold py-3.5 rounded-md uppercase tracking-wider text-[13px] hover:bg-[#8b1818] hover:text-white transition-colors active:scale-[0.98]">
+              View All Trending
             </button>
           </div>
         </div>

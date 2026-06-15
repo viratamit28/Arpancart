@@ -15,14 +15,11 @@ const Navbar = () => {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
-  // 🔥 NAYA: Admin Settings se WhatsApp Number lane ke liye state
-  const [whatsappNumber, setWhatsappNumber] = useState('910000000000'); // Default fallback
+  const [whatsappNumber, setWhatsappNumber] = useState('910000000000'); 
 
-  // const API_BASE_URL = 'https://arpancart-production.up.railway.app/api';
   const API_BASE_URL = 'https://arpancart-production.up.railway.app/api';
 
   useEffect(() => {
-    // 🌐 Fetch settings from backend
     const fetchSettings = async () => {
       try {
         const res = await axios.get(`${API_BASE_URL}/public-settings`);
@@ -65,7 +62,7 @@ const Navbar = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 shadow-sm w-full bg-[#fcfaf5]">
+    <header className="sticky top-0 z-50 shadow-sm w-full bg-white border-b border-gray-100">
       
       {/* =========================================
           TOP CONTACT BAR (DESKTOP ONLY)
@@ -76,34 +73,25 @@ const Navbar = () => {
           <span className="flex items-center gap-1.5"><Mail className="w-3 h-3" /> aarpancart@gmail.com</span>
         </div>
         <div>
-          <span>Free Shipping on Orders above ₹999 | 100% Authentic Samagri</span>
+          <span>Free Shipping on Orders above ₹499 | 100% Authentic Samagri</span>
         </div>
       </div>
 
       <div>
         {/* =========================================
-            MAIN HEADER ROW (LOGO, SEARCH, ICONS)
+            MAIN HEADER ROW (EXACTLY LIKE IMAGE)
         ========================================= */}
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex flex-wrap justify-between items-center gap-4 border-b border-[#8b1818]/10 md:border-none relative bg-[#fcfaf5] z-20">
+        <div className="max-w-7xl mx-auto px-4 py-3 md:py-4 flex justify-between items-center bg-white z-20 relative">
           
-          {/* Mobile Menu Toggle Button (Left) */}
-          <div className="flex-1 md:hidden">
-            <button 
-              className="text-[#8b1818] hover:bg-orange-50 p-1 rounded transition-colors" 
-              onClick={toggleMobileMenu}
-            >
-              {isMobileMenuOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
-            </button>
-          </div>
-
-          {/* Logo (Center) */}
-          <Link to="/" className="flex-shrink-0 mx-auto md:mx-0" onClick={() => { setIsMobileMenuOpen(false); setIsMobileSearchOpen(false); }}>
-            <img src={logo} alt="Arpan Cart Logo" className="h-10 md:h-14 w-auto object-contain" />
+          {/* Left Side: Logo & Tagline */}
+          <Link to="/" className="flex flex-col items-start" onClick={() => { setIsMobileMenuOpen(false); setIsMobileSearchOpen(false); }}>
+            <img src={logo} alt="PujaDukaan Logo" className="h-8 md:h-12 w-auto object-contain" />
+            
           </Link>
 
-          {/* Desktop Search Bar & Naye Buttons */}
-          <div className="hidden md:flex flex-grow max-w-2xl mx-4 items-center gap-3">
-            <form onSubmit={handleSearchSubmit} className="flex-grow flex items-center bg-white border border-orange-200 rounded-sm px-3 py-2 focus-within:border-[#f7941d] transition-all shadow-sm">
+          {/* Desktop Search Bar (Hidden on Mobile) */}
+          <div className="hidden md:flex flex-grow max-w-xl mx-8 items-center gap-3">
+            <form onSubmit={handleSearchSubmit} className="flex-grow flex items-center bg-white border border-gray-300 rounded-sm px-3 py-1.5 focus-within:border-[#8b1818] transition-all">
               <input 
                 type="text" 
                 placeholder="Search Pooja Samagri..." 
@@ -111,117 +99,71 @@ const Navbar = () => {
                 onChange={(e) => setSearchQuery(e.target.value)} 
                 className="w-full outline-none text-sm bg-transparent text-gray-700 placeholder-gray-400" 
               />
-              <button type="submit" className="text-[#8b1818] hover:text-[#f7941d] transition-colors ml-2">
+              <button type="submit" className="text-gray-500 hover:text-[#8b1818] transition-colors ml-2">
                 <Search className="w-5 h-5" />
               </button>
             </form>
-
-            {/* 🔥 NAYA: Send List on WhatsApp Button */}
-            <a 
-              href={`https://wa.me/${whatsappNumber}?text=Hare%20Krishna!%20Mujhe%20apni%20pooja%20samagri%20ki%20list%20bhejni%20hai:`}
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 bg-[#25D366] hover:bg-[#1ebd5a] text-white px-3 py-2.5 rounded-sm text-xs font-bold whitespace-nowrap shadow-sm transition-colors"
-            >
-              <MessageCircle className="w-4 h-4" /> Send List
-            </a>
-
-            {/* 🔥 NAYA: Pandit Ji Booking Button */}
-            <a 
-              href={`https://wa.me/${whatsappNumber}?text=Pranam!%20Mujhe%20Pandit%20Ji%20book%20karne%20ke%20liye%20enquiry%20karni%20hai.`}
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 bg-[#f7941d] hover:bg-[#e0861a] text-white px-3 py-2.5 rounded-sm text-xs font-bold whitespace-nowrap shadow-sm transition-colors"
-            >
-              <CalendarClock className="w-4 h-4" /> Book Pandit Ji
-            </a>
           </div>
 
-          {/* Right Side Icons (Search, User & Cart) */}
-          <div className="flex items-center justify-end gap-4 md:gap-6 flex-1 md:flex-none">
+          {/* Right Side: Cart, WhatsApp, Menu (Exact order as image) */}
+          <div className="flex items-center gap-4 md:gap-6">
             
-            {/* Mobile Search Icon */}
-            <button 
-              className="md:hidden text-[#8b1818] hover:text-[#f7941d] transition-colors p-1"
-              onClick={toggleMobileSearch}
-            >
-              {isMobileSearchOpen ? <X className="w-6 h-6" /> : <Search className="w-6 h-6" />}
-            </button>
-
-            {/* User Icon (Desktop) */}
-            <Link to={token ? "/dashboard" : "/login"} className="hidden md:block text-[#8b1818] hover:text-[#f7941d] transition-colors">
-              <User className="w-6 h-6" />
-            </Link>
-            
-            {/* Cart Icon with Indicator */}
+            {/* 1. Shopping Bag with Badge */}
             <div className="relative">
-              <Link to="/cart" className="relative text-[#8b1818] hover:text-[#f7941d] transition-colors block p-1">
-                <ShoppingCart className="w-6 h-6" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-[#f7941d] text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full shadow-sm">
-                    {cartCount}
-                  </span>
-                )}
+              <Link to="/cart" className="relative text-gray-800 hover:text-[#8b1818] transition-colors block">
+                {/* Changed to ShoppingBag-like icon from lucide, using ShoppingCart for now, adjust if needed */}
+                <ShoppingCart className="w-6 h-6 md:w-7 md:h-7" strokeWidth={1.5} />
+                <span className="absolute -top-1.5 -right-2 bg-[#d32f2f] text-white text-[11px] font-bold h-[18px] min-w-[18px] px-1 flex items-center justify-center rounded-full">
+                  {cartCount}
+                </span>
               </Link>
-
+              
               {/* Cart Addition Success Tooltip */}
               {showCartIndicator && (
-                <div className="absolute top-full right-0 mt-4 w-48 bg-white border border-orange-100 shadow-[0_10px_25px_rgba(139,24,24,0.15)] rounded-sm p-3 z-50 animate-fade-in-up">
+                <div className="absolute top-full right-0 mt-4 w-48 bg-white border border-orange-100 shadow-lg rounded-sm p-3 z-50 animate-fade-in-up">
                   <div className="absolute -top-2 right-1.5 w-4 h-4 bg-white border-t border-l border-orange-100 transform rotate-45"></div>
                   <div className="relative z-10 flex flex-col items-center text-center">
                     <CheckCircle className="w-5 h-5 text-green-500 mb-1" />
                     <p className="text-xs font-bold text-gray-800">Item Added!</p>
-                    <p className="text-[10px] text-gray-500 mt-0.5">Click cart icon to checkout</p>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Desktop Auth Button */}
-            {token ? (
-              <button onClick={handleLogout} className="hidden md:flex items-center gap-2 border-[2px] border-[#8b1818] text-[#8b1818] hover:bg-[#8b1818] hover:text-white px-5 py-2 rounded-sm font-bold text-sm transition-all duration-300">
-                <LogOut className="w-4 h-4" /> Logout
-              </button>
-            ) : (
-              <Link to="/login" className="hidden md:flex bg-[#f7941d] hover:bg-[#e0861a] text-white px-6 py-2.5 rounded-sm shadow-md font-bold text-sm transition-all duration-300">
-                Login
-              </Link>
-            )}
+            {/* 2. WhatsApp Icon */}
+            <a 
+              href={`https://wa.me/${whatsappNumber}?text=Hare%20Krishna!%20Mujhe%20pooja%20samagri%20ki%20jankari%20chahiye:`}
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-gray-800 hover:text-[#25D366] transition-colors block"
+            >
+              <MessageCircle className="w-6 h-6 md:w-7 md:h-7" strokeWidth={1.5} />
+            </a>
+
+            {/* User Icon (Desktop Only) */}
+            <Link to={token ? "/dashboard" : "/login"} className="hidden md:block text-gray-800 hover:text-[#8b1818] transition-colors">
+              <User className="w-6 h-6 md:w-7 md:h-7" strokeWidth={1.5} />
+            </Link>
+
+            {/* 3. Hamburger Menu (Mobile Only) */}
+            <button 
+              className="md:hidden text-gray-800 p-1" 
+              onClick={toggleMobileMenu}
+            >
+              {isMobileMenuOpen ? <X className="w-7 h-7" strokeWidth={1.5} /> : <Menu className="w-7 h-7" strokeWidth={1.5} />}
+            </button>
+
           </div>
         </div>
 
-        {/* =========================================
-            MOBILE SLIDING SEARCH BAR (Updated with Mobile Buttons)
-        ========================================= */}
-        <div 
-          className={`md:hidden absolute w-full left-0 bg-[#fcfaf5] border-b border-gray-200 transition-all duration-300 ease-in-out z-10 shadow-md ${
-            isMobileSearchOpen ? 'translate-y-0 opacity-100 pointer-events-auto' : '-translate-y-full opacity-0 pointer-events-none'
-          }`}
-        >
-          <div className="p-4 flex flex-col gap-3">
-            <form onSubmit={handleSearchSubmit} className="flex items-center bg-white border border-orange-200 rounded-sm px-3 py-2 shadow-sm focus-within:border-[#f7941d] transition-colors">
-              <input 
-                type="text" 
-                placeholder="Search products..." 
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)} 
-                className="w-full outline-none text-sm bg-transparent text-gray-800" 
-                autoFocus={isMobileSearchOpen}
-              />
-              <button type="submit" className="text-[#8b1818] ml-2 p-1">
-                <Search className="w-5 h-5" />
-              </button>
-            </form>
-            
-            {/* 🔥 NAYA: Mobile layout me dono buttons */}
-            <div className="flex gap-2">
-              <a href={`https://wa.me/${whatsappNumber}?text=Hare%20Krishna!%20Mujhe%20apni%20pooja%20samagri%20ki%20list%20bhejni%20hai:`} target="_blank" rel="noopener noreferrer" className="flex-1 flex justify-center items-center gap-1.5 bg-[#25D366] text-white py-2 rounded-sm text-[11px] font-bold shadow-sm">
-                <MessageCircle className="w-3 h-3" /> Send List
-              </a>
-              <a href={`https://wa.me/${whatsappNumber}?text=Pranam!%20Mujhe%20Pandit%20Ji%20book%20karne%20ke%20liye%20enquiry%20karni%20hai.`} target="_blank" rel="noopener noreferrer" className="flex-1 flex justify-center items-center gap-1.5 bg-[#f7941d] text-white py-2 rounded-sm text-[11px] font-bold shadow-sm">
-                <CalendarClock className="w-3 h-3" /> Book Pandit
-              </a>
-            </div>
+        {/* Desktop Navigation Links (Below Header) */}
+        <div className="hidden md:flex border-t border-gray-200 bg-white shadow-sm">
+          <div className="max-w-7xl mx-auto px-8 py-2.5 flex gap-8 text-[14px] font-semibold text-gray-700 tracking-wide">
+            <Link to="/" className={`${isActive('/') ? 'text-[#8b1818]' : 'hover:text-[#8b1818]'}`}>Home</Link>
+            <Link to="/shop" className={`${isActive('/shop') ? 'text-[#8b1818]' : 'hover:text-[#8b1818]'}`}>Shop</Link>
+            <Link to="/subscriptions" className={`${isActive('/subscriptions') ? 'text-[#8b1818]' : 'hover:text-[#8b1818]'}`}>Subscriptions</Link>
+            <Link to="/about" className={`${isActive('/about') ? 'text-[#8b1818]' : 'hover:text-[#8b1818]'}`}>About Us</Link>
+            <Link to="/contact" className={`${isActive('/contact') ? 'text-[#8b1818]' : 'hover:text-[#8b1818]'}`}>Contact</Link>
           </div>
         </div>
 
@@ -229,47 +171,53 @@ const Navbar = () => {
             MOBILE DROPDOWN MENU
         ========================================= */}
         {isMobileMenuOpen && (
-          <div className="md:hidden absolute top-full left-0 w-full bg-white shadow-lg border-b border-gray-100 flex flex-col z-40 animate-fade-in-down">
-            {/* Mobile Navigation Links */}
-            <div className="flex flex-col py-2 font-bold text-gray-700 uppercase tracking-wide text-sm">
-              <Link to="/" className={`px-6 py-3 border-b border-gray-50 ${isActive('/') ? 'text-[#c21820] bg-orange-50' : 'hover:bg-gray-50'}`} onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
-              <Link to="/shop" className={`px-6 py-3 border-b border-gray-50 ${isActive('/shop') ? 'text-[#c21820] bg-orange-50' : 'hover:bg-gray-50'}`} onClick={() => setIsMobileMenuOpen(false)}>Shop</Link>
-              <Link to="/subscriptions" className={`px-6 py-3 border-b border-gray-50 ${isActive('/subscriptions') ? 'text-[#c21820] bg-orange-50' : 'hover:bg-gray-50'}`} onClick={() => setIsMobileMenuOpen(false)}>Subscriptions</Link>
-              <Link to="/about" className={`px-6 py-3 border-b border-gray-50 ${isActive('/about') ? 'text-[#c21820] bg-orange-50' : 'hover:bg-gray-50'}`} onClick={() => setIsMobileMenuOpen(false)}>About Us</Link>
-              <Link to="/contact" className={`px-6 py-3 border-b border-gray-50 ${isActive('/contact') ? 'text-[#c21820] bg-orange-50' : 'hover:bg-gray-50'}`} onClick={() => setIsMobileMenuOpen(false)}>Contact</Link>
+          <div className="md:hidden absolute top-full left-0 w-full bg-white shadow-xl border-t border-gray-100 flex flex-col z-40">
+            {/* Search Bar Inside Mobile Menu */}
+            <div className="p-4 border-b border-gray-100 bg-gray-50">
+              <form onSubmit={handleSearchSubmit} className="flex items-center bg-white border border-gray-300 rounded-sm px-3 py-2">
+                <input 
+                  type="text" 
+                  placeholder="Search products..." 
+                  value={searchQuery} 
+                  onChange={(e) => setSearchQuery(e.target.value)} 
+                  className="w-full outline-none text-sm bg-transparent" 
+                />
+                <button type="submit" className="text-gray-500 ml-2">
+                  <Search className="w-5 h-5" />
+                </button>
+              </form>
+            </div>
+
+            {/* Navigation Links */}
+            <div className="flex flex-col py-2 font-semibold text-gray-700 text-[15px]">
+              <Link to="/" className={`px-6 py-3 border-b border-gray-50 ${isActive('/') ? 'text-[#8b1818] bg-red-50' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
+              <Link to="/shop" className={`px-6 py-3 border-b border-gray-50 ${isActive('/shop') ? 'text-[#8b1818] bg-red-50' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>Shop</Link>
+              <Link to="/subscriptions" className={`px-6 py-3 border-b border-gray-50 ${isActive('/subscriptions') ? 'text-[#8b1818] bg-red-50' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>Subscriptions</Link>
+              <Link to="/about" className={`px-6 py-3 border-b border-gray-50 ${isActive('/about') ? 'text-[#8b1818] bg-red-50' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>About Us</Link>
+              <Link to="/contact" className={`px-6 py-3 border-b border-gray-50 ${isActive('/contact') ? 'text-[#8b1818] bg-red-50' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>Contact</Link>
               
               {token && (
-                <Link to="/dashboard" className={`px-6 py-3 border-b border-gray-50 ${isActive('/dashboard') ? 'text-[#c21820] bg-orange-50' : 'hover:bg-gray-50'}`} onClick={() => setIsMobileMenuOpen(false)}>My Dashboard</Link>
+                <Link to="/dashboard" className={`px-6 py-3 border-b border-gray-50 ${isActive('/dashboard') ? 'text-[#8b1818] bg-red-50' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>My Dashboard</Link>
               )}
             </div>
 
-            {/* Mobile Auth Button */}
-            <div className="p-4 bg-gray-50">
+            {/* Auth Buttons */}
+            <div className="p-4 bg-gray-50 flex gap-2">
+              <a href={`https://wa.me/${whatsappNumber}?text=Pranam!%20Mujhe%20Pandit%20Ji%20book%20karne%20ke%20liye%20enquiry%20karni%20hai.`} target="_blank" rel="noopener noreferrer" className="flex-1 flex justify-center items-center gap-1 bg-[#f7941d] text-white py-2 rounded-sm text-xs font-bold shadow-sm">
+                <CalendarClock className="w-3.5 h-3.5" /> Book Pandit
+              </a>
               {token ? (
-                <button onClick={handleLogout} className="w-full flex justify-center items-center gap-2 border-[2px] border-[#8b1818] text-[#8b1818] py-2.5 rounded-sm font-bold active:bg-gray-100">
-                  <LogOut className="w-4 h-4" /> Logout
+                <button onClick={handleLogout} className="flex-1 flex justify-center items-center gap-1 border border-[#8b1818] text-[#8b1818] py-2 rounded-sm text-xs font-bold bg-white">
+                  <LogOut className="w-3.5 h-3.5" /> Logout
                 </button>
               ) : (
-                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="w-full flex justify-center bg-[#f7941d] text-white py-2.5 rounded-sm shadow-md font-bold active:scale-95 transition-transform">
+                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="flex-1 flex justify-center items-center bg-[#8b1818] text-white py-2 rounded-sm text-xs font-bold">
                   Login / Sign Up
                 </Link>
               )}
             </div>
           </div>
         )}
-
-        {/* =========================================
-            DESKTOP NAVIGATION LINKS
-        ========================================= */}
-        <div className="hidden md:flex border-t border-[#8b1818]/10 bg-[#fcfaf5]">
-          <div className="max-w-7xl mx-auto px-4 md:px-8 py-3 flex gap-8 text-[15px] font-bold text-gray-700 uppercase tracking-wide">
-            <Link to="/" className={`${isActive('/') ? 'text-[#c21820]' : 'hover:text-[#c21820]'} transition-colors`}>Home</Link>
-            <Link to="/shop" className={`${isActive('/shop') ? 'text-[#c21820]' : 'hover:text-[#c21820]'} transition-colors`}>Shop</Link>
-            <Link to="/subscriptions" className={`${isActive('/subscriptions') ? 'text-[#c21820]' : 'hover:text-[#c21820]'} transition-colors`}>Subscriptions</Link>
-            <Link to="/about" className={`${isActive('/about') ? 'text-[#c21820]' : 'hover:text-[#c21820]'} transition-colors`}>About Us</Link>
-            <Link to="/contact" className={`${isActive('/contact') ? 'text-[#c21820]' : 'hover:text-[#c21820]'} transition-colors`}>Contact</Link>
-          </div>
-        </div>
         
       </div>
     </header>
