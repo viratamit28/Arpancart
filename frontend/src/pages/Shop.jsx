@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import TrendingBanner from '../components/TrendingBanner';
-import { SlidersHorizontal, Search, X, ChevronRight, Sparkles, Flame, Star, LayoutGrid } from 'lucide-react';
+import { Search, X, ChevronRight, Sparkles, Flame, Star, LayoutGrid, ArrowLeft } from 'lucide-react'; // 🔥 ArrowLeft added
 
 const Shop = () => {
   const [allProducts, setAllProducts] = useState([]);
@@ -90,7 +90,6 @@ const Shop = () => {
     if (isTrending) {
       result = result.filter(p => p.isTrending === true);
     } else if (isPopular) {
-      // Mock popular sorting (Best practice: add isPopular in DB, but for now we slice top rated/viewed)
       result = result.slice(0, 12); 
     }
 
@@ -117,39 +116,20 @@ const Shop = () => {
     else navigate(`/shop?category=${encodeURIComponent(cat)}`);
   };
 
-  // 🔥 5. DYNAMIC HEADER CONFIGURATION
+  // 5. DYNAMIC HEADER CONFIGURATION
   let pageHeader = {
-    title: "Pooja Samagri Collection",
-    subtitle: "Explore pure and authentic items organized perfectly for your spiritual rituals.",
-    icon: <Sparkles className="w-8 h-8 text-[#f7941d]" />,
-    gradient: "from-[#8b1818] to-[#5a0f0f]"
+    title: "Puja Items & Puja Kits" // Default from your image
   };
 
   if (isTrending) {
-    pageHeader = {
-      title: "Trending Spiritual Essentials",
-      subtitle: "Season's most loved and highly requested divine items.",
-      icon: <Flame className="w-8 h-8 text-[#f7941d] animate-pulse" />,
-      gradient: "from-[#f7941d] to-[#c26f12]"
-    };
+    pageHeader.title = "Trending Spiritual Essentials";
   } else if (isPopular) {
-    pageHeader = {
-      title: "Most Loved Best Sellers",
-      subtitle: "Our highest rated and most trusted pooja essentials chosen by devotees.",
-      icon: <Star className="w-8 h-8 text-[#f7941d]" />,
-      gradient: "from-[#c21820] to-[#8b1818]"
-    };
+    pageHeader.title = "Most Loved Best Sellers";
   } else if (urlCategory) {
-    pageHeader = {
-      title: `${urlCategory} Collection`,
-      subtitle: `Explore our premium range of authentic ${urlCategory}.`,
-      icon: <LayoutGrid className="w-8 h-8 text-[#f7941d]" />,
-      gradient: "from-[#8b1818] to-[#5a0f0f]"
-    };
+    pageHeader.title = `${urlCategory}`;
   }
 
-  // 🔥 6. SMART CATEGORY GROUPING LOGIC
-  // Agar "All" selected hai, aur Trending/Popular/Search nahi hai, toh products ko category wise dikhao
+  // 6. SMART CATEGORY GROUPING LOGIC
   const shouldGroupByCategory = selectedCategory === 'All' && !isTrending && !isPopular && !searchQuery;
 
   const groupedProducts = {};
@@ -164,7 +144,7 @@ const Shop = () => {
   }
 
   return (
-    <div className="bg-[#fcfaf5] min-h-screen pb-12">
+    <div className="bg-[#fdfaf6] min-h-screen pb-12">
       
       <style>
         {`
@@ -173,34 +153,58 @@ const Shop = () => {
             to { opacity: 1; transform: translateY(0); }
           }
           .animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-          .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-          .custom-scrollbar::-webkit-scrollbar-track { background: #fffbf4; }
-          .custom-scrollbar::-webkit-scrollbar-thumb { background: #f7941d; border-radius: 4px; }
+          .hide-scrollbar::-webkit-scrollbar { display: none; }
+          .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         `}
       </style>
 
-      {/* =========================================
-          🔥 DYNAMIC MODERN BANNER
-      ========================================= */}
-      <div className={`w-full py-16 px-4 flex flex-col items-center justify-center text-center bg-gradient-to-r ${pageHeader.gradient} text-white shadow-md mb-10`}>
-        <div className="animate-fade-up flex flex-col items-center">
-          <div className="bg-white/20 p-4 rounded-full backdrop-blur-sm mb-4 shadow-inner">
-            {pageHeader.icon}
-          </div>
-          <h1 className="text-3xl md:text-5xl font-extrabold uppercase tracking-widest drop-shadow-md mb-3">
-            {pageHeader.title}
-          </h1>
-          <p className="text-sm md:text-lg text-white/90 font-medium max-w-2xl">
-            {pageHeader.subtitle}
-          </p>
-        </div>
-      </div>
-
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 pt-8 md:pt-12">
         
+        {/* =========================================
+            🔥 NEW HEADER MATCHING YOUR IMAGE
+        ========================================= */}
+        <div className="flex flex-col mb-8 animate-fade-up">
+          
+          <div className="flex items-center gap-4 md:gap-6 mb-8">
+            <button 
+              onClick={() => navigate(-1)} 
+              className="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 flex items-center justify-center bg-[#ebdcd3] text-[#6b1a1a] rounded-full hover:bg-[#e0c9ba] transition-colors shadow-sm"
+            >
+              <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2.5} />
+            </button>
+            <h1 className="text-2xl md:text-[32px] font-bold text-[#6b1a1a] font-serif tracking-wide">
+              {pageHeader.title}
+            </h1>
+          </div>
+
+          {/* =========================================
+              🔥 NEW HORIZONTAL CATEGORY PILLS (TABS)
+          ========================================= */}
+          {(!isTrending && !isPopular) && (
+            <div className="flex overflow-x-auto gap-3 md:gap-4 pb-2 hide-scrollbar w-full">
+              {categories.map((cat, index) => {
+                const isActive = (!isTrending && !isPopular && selectedCategory.toLowerCase() === cat.toLowerCase());
+                return (
+                  <button
+                    key={index}
+                    onClick={() => handleSidebarCategoryClick(cat)}
+                    className={`px-6 md:px-8 py-2.5 md:py-3 rounded-full text-sm md:text-[15px] font-semibold whitespace-nowrap transition-all duration-300 border flex-shrink-0 ${
+                      isActive 
+                        ? 'bg-[#7a1a1a] text-white border-[#7a1a1a] shadow-md' 
+                        : 'bg-white text-gray-800 border-gray-200 hover:border-[#7a1a1a] shadow-sm'
+                    }`}
+                  >
+                    {cat === 'All' ? 'All Puja Items' : cat}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
         {/* Search Indicator */}
         {searchQuery && (
-          <div className="mb-6 flex justify-center animate-fade-up">
+          <div className="mb-6 flex animate-fade-up">
             <div className="inline-flex items-center gap-2 bg-white border border-orange-200 text-[#8b1818] px-6 py-3 rounded-full font-bold shadow-sm text-sm">
               <Search className="w-4 h-4" /> Showing results for: "{searchQuery}"
               <button onClick={() => navigate('/shop')} className="ml-2 bg-orange-100 p-1 rounded-full hover:bg-orange-200 transition-colors"><X className="w-3 h-3"/></button>
@@ -208,157 +212,127 @@ const Shop = () => {
           </div>
         )}
 
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
+        {/* =========================================
+            PRODUCTS AREA (Now Full Width)
+        ========================================= */}
+        <div className="w-full animate-fade-up" style={{ animationDelay: '0.1s' }}>
           
-          {/* =========================================
-              LEFT SIDEBAR (FILTERS)
-          ========================================= */}
-          <div className="w-full lg:w-1/4 flex flex-col gap-6 relative lg:sticky lg:top-24 z-10 animate-fade-up">
-            <div className="bg-white p-5 md:p-6 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-orange-50">
-              <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
-                <SlidersHorizontal className="w-5 h-5 text-[#f7941d]" />
-                <h2 className="text-lg font-extrabold text-gray-800 uppercase tracking-wide">Filters</h2>
-              </div>
+          {/* Top Toolbar */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 md:p-5 rounded-xl shadow-[0_2px_15px_rgba(0,0,0,0.03)] border border-orange-50 mb-8 gap-4">
+            <div className="font-bold text-gray-600 text-sm">
+              Showing <span className="text-[#8b1818] text-lg">{filteredProducts.length}</span> products
+            </div>
+            
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <label className="font-bold text-gray-600 text-xs uppercase whitespace-nowrap">Sort By:</label>
+              <select 
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full sm:w-auto bg-[#fdfaf6] border border-gray-200 text-gray-800 font-bold text-sm rounded-lg focus:ring-[#8b1818] focus:border-[#8b1818] block p-2.5 outline-none cursor-pointer"
+              >
+                <option value="default">Recommended</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+              </select>
+            </div>
+          </div>
 
-              <div>
-                <h3 className="font-extrabold text-[#8b1818] mb-3 uppercase text-xs tracking-wider">Categories</h3>
-                <div className="flex flex-col gap-1.5 max-h-[250px] lg:max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
-                  {categories.map((cat, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleSidebarCategoryClick(cat)}
-                      className={`flex items-center justify-between text-left px-3 py-2.5 rounded-lg font-medium transition-all duration-300 text-sm ${
-                        (!isTrending && !isPopular && selectedCategory.toLowerCase() === cat.toLowerCase())
-                          ? 'bg-gradient-to-r from-orange-50 to-transparent border-l-4 border-[#f7941d] text-[#8b1818] font-bold' 
-                          : 'border-l-4 border-transparent text-gray-600 hover:bg-gray-50 hover:text-[#8b1818]'
-                      }`}
-                    >
-                      <span className="truncate pr-2">{cat}</span>
-                      {(!isTrending && !isPopular && selectedCategory.toLowerCase() === cat.toLowerCase()) && <ChevronRight className="w-4 h-4 flex-shrink-0 text-[#f7941d]" />}
-                    </button>
+          {/* LOADING STATE */}
+          {loading && (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                <div key={n} className="bg-white rounded-2xl h-[340px] animate-pulse border border-orange-50 shadow-sm">
+                  <div className="w-full h-48 bg-orange-50/50 rounded-t-2xl"></div>
+                  <div className="p-5 space-y-4">
+                    <div className="h-4 bg-gray-200 w-3/4 rounded-sm"></div>
+                    <div className="h-3 bg-gray-100 w-1/2 rounded-sm"></div>
+                    <div className="h-10 bg-gray-200 mt-4 rounded-full"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ERROR STATE */}
+          {error && (
+            <div className="bg-red-50 text-red-600 font-bold p-6 rounded-xl border border-red-100 text-center">
+              {error}
+            </div>
+          )}
+
+          {/* EMPTY RESULTS STATE */}
+          {!loading && !error && filteredProducts.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-20 px-4 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-orange-50 text-center">
+              <X className="w-16 h-16 text-gray-300 mb-4" />
+              <p className="text-gray-800 text-2xl font-extrabold mb-2">No items found</p>
+              <p className="text-gray-500 font-medium">
+                {searchQuery ? `We couldn't find anything matching "${searchQuery}".` : "This collection is currently empty."}
+              </p>
+              <button onClick={() => { setSelectedCategory('All'); navigate('/shop'); }} className="mt-6 bg-[#8b1818] text-white font-extrabold py-3 px-8 rounded-full transition-colors uppercase tracking-wider text-sm shadow-md hover:shadow-lg active:scale-95">
+                View All Products
+              </button>
+            </div>
+          )}
+
+          {/* =========================================
+              PRODUCT RENDERING (Grouped vs Grid)
+          ========================================= */}
+          {!loading && !error && filteredProducts.length > 0 && (
+            <>
+              {shouldGroupByCategory ? (
+                // 🔥 GROUPED BY CATEGORY VIEW
+                <div className="space-y-12">
+                  {Object.keys(groupedProducts).map((catName, idx) => (
+                    <div key={idx} className="bg-white p-4 md:p-6 rounded-2xl border border-orange-50 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                      <div className="flex justify-between items-end border-b border-gray-100 pb-4 mb-6">
+                        <h2 className="text-xl md:text-2xl font-extrabold text-[#8b1818] flex items-center gap-2">
+                          <Sparkles className="w-5 h-5 text-[#f7941d]"/> {catName}
+                        </h2>
+                        <button onClick={() => navigate(`/shop?category=${encodeURIComponent(catName)}`)} className="text-sm font-bold text-[#f7941d] hover:text-[#8b1818] transition-colors flex items-center gap-1 bg-orange-50 px-3 py-1.5 rounded-full">
+                          See All <ChevronRight className="w-4 h-4"/>
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                        {groupedProducts[catName].slice(0, 4).map(product => (
+                          <ProductCard key={product.id || product._id} product={product} />
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
-              </div>
-            </div>
+              ) : (
+                // 🔥 STANDARD GRID VIEW (Using 4 columns for desktop since sidebar is gone)
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                  {filteredProducts.map((product) => (
+                    <ProductCard key={product.id || product._id} product={product} />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
 
-            <div className="bg-gradient-to-br from-[#8b1818] to-[#6e1313] p-6 rounded-xl shadow-lg text-white text-center">
-              <h3 className="font-extrabold text-lg mb-2">Need Guidance?</h3>
-              <p className="text-xs text-white/80 mb-4 leading-relaxed">Not sure what samagri you need for your pooja? We are here to help.</p>
-              <a href="tel:+919123187724" className="inline-block bg-white text-[#8b1818] font-extrabold py-2.5 px-4 rounded-sm text-sm hover:bg-[#f7941d] hover:text-white transition-colors w-full shadow-md">
-                Call +91 91231 87724
-              </a>
-            </div>
-          </div>
-
-          {/* =========================================
-              RIGHT SIDE (PRODUCTS AREA)
-          ========================================= */}
-          <div className="w-full lg:w-3/4 animate-fade-up" style={{ animationDelay: '0.2s' }}>
-            
-            {/* Top Toolbar */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-orange-50 mb-8 gap-4">
-              <div className="font-bold text-gray-600 text-sm">
-                Showing <span className="text-[#8b1818] text-lg">{filteredProducts.length}</span> products
-              </div>
-              
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <label className="font-bold text-gray-600 text-xs uppercase whitespace-nowrap">Sort By:</label>
-                <select 
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full sm:w-auto bg-[#fcfaf5] border border-gray-200 text-gray-800 font-bold text-sm rounded-md focus:ring-[#f7941d] focus:border-[#f7941d] block p-2.5 outline-none cursor-pointer"
-                >
-                  <option value="default">Recommended</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
-                </select>
-              </div>
-            </div>
-
-            {/* LOADING STATE */}
-            {loading && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                {[1, 2, 3, 4, 5, 6].map((n) => (
-                  <div key={n} className="bg-white rounded-2xl h-[400px] animate-pulse border border-orange-50 shadow-sm">
-                    <div className="w-full h-56 bg-orange-50/50 rounded-t-2xl"></div>
-                    <div className="p-5 space-y-4">
-                      <div className="h-5 bg-gray-200 w-3/4 rounded-sm"></div>
-                      <div className="h-4 bg-gray-100 w-1/2 rounded-sm"></div>
-                      <div className="h-12 bg-gray-200 mt-6 rounded-xl"></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* ERROR STATE */}
-            {error && (
-              <div className="bg-red-50 text-red-600 font-bold p-6 rounded-xl border border-red-100 text-center">
-                {error}
-              </div>
-            )}
-
-            {/* EMPTY RESULTS STATE */}
-            {!loading && !error && filteredProducts.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-20 px-4 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-orange-50 text-center">
-                <X className="w-16 h-16 text-gray-300 mb-4" />
-                <p className="text-gray-800 text-2xl font-extrabold mb-2">No items found</p>
-                <p className="text-gray-500 font-medium">
-                  {searchQuery ? `We couldn't find anything matching "${searchQuery}".` : "This collection is currently empty."}
-                </p>
-                <button onClick={() => { setSelectedCategory('All'); navigate('/shop'); }} className="mt-6 border-[2px] border-[#8b1818] text-[#8b1818] hover:bg-[#8b1818] hover:text-white font-extrabold py-3 px-8 rounded-sm transition-colors uppercase tracking-wider text-sm shadow-sm">
-                  View All Products
-                </button>
-              </div>
-            )}
-
-            {/* =========================================
-                PRODUCT RENDERING (Grouped vs Grid)
-            ========================================= */}
-            {!loading && !error && filteredProducts.length > 0 && (
-              <>
-                {shouldGroupByCategory ? (
-                  // 🔥 GROUPED BY CATEGORY VIEW (Default '/shop' look)
-                  <div className="space-y-12">
-                    {Object.keys(groupedProducts).map((catName, idx) => (
-                      <div key={idx} className="bg-white p-6 rounded-2xl border border-orange-50 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-                        <div className="flex justify-between items-end border-b border-gray-100 pb-4 mb-6">
-                          <h2 className="text-2xl font-extrabold text-[#8b1818] flex items-center gap-2">
-                            <Sparkles className="w-5 h-5 text-[#f7941d]"/> {catName}
-                          </h2>
-                          <button onClick={() => navigate(`/shop?category=${encodeURIComponent(catName)}`)} className="text-sm font-bold text-[#f7941d] hover:text-[#8b1818] transition-colors flex items-center gap-1">
-                            See All <ChevronRight className="w-4 h-4"/>
-                          </button>
-                        </div>
-                        {/* Render only top 3 items per category in this view to keep it clean */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                          {groupedProducts[catName].slice(0, 3).map(product => (
-                            <ProductCard key={product.id || product._id} product={product} />
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  // 🔥 STANDARD GRID VIEW (For Trending, Popular, or specific Category)
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {filteredProducts.map((product) => (
-                      <ProductCard key={product.id || product._id} product={product} />
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-
-          </div>
         </div>
+
+        {/* Need Guidance Box (Moved to bottom) */}
+        {!loading && !error && (
+           <div className="mt-12 bg-[#8b1818] md:bg-gradient-to-r md:from-[#8b1818] md:to-[#6e1313] p-6 md:p-10 rounded-2xl shadow-lg text-white flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <h3 className="font-extrabold text-xl md:text-2xl mb-2">Need Guidance?</h3>
+              <p className="text-sm text-white/80 leading-relaxed">Not sure what samagri you need for your pooja? Our experts are here to help you.</p>
+            </div>
+            <a href="tel:+919123187724" className="bg-white text-[#8b1818] font-extrabold py-3 px-8 rounded-full hover:bg-[#f7941d] hover:text-white transition-all whitespace-nowrap shadow-md active:scale-95">
+              Call +91 91231 87724
+            </a>
+          </div>
+        )}
 
         {/* Hide Trending Banner if we are already viewing the Trending Page */}
         {!isTrending && (
-          <div className="mt-16 md:mt-24 border-t border-orange-100 pt-8">
+          <div className="mt-16 border-t border-orange-100 pt-8">
             <TrendingBanner />
           </div>
         )}
+
       </div>
     </div>
   );

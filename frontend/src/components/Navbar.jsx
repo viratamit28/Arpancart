@@ -56,11 +56,6 @@ const Navbar = () => {
     if (!isMobileMenuOpen) setIsMobileSearchOpen(false);
   };
 
-  const toggleMobileSearch = () => {
-    setIsMobileSearchOpen(!isMobileSearchOpen);
-    if (!isMobileSearchOpen) setIsMobileMenuOpen(false);
-  };
-
   return (
     <header className="sticky top-0 z-50 shadow-sm w-full bg-white border-b border-gray-100">
       
@@ -79,18 +74,20 @@ const Navbar = () => {
 
       <div>
         {/* =========================================
-            MAIN HEADER ROW (EXACTLY LIKE IMAGE)
+            MAIN HEADER ROW
         ========================================= */}
         <div className="max-w-7xl mx-auto px-4 py-3 md:py-4 flex justify-between items-center bg-white z-20 relative">
           
           {/* Left Side: Logo & Tagline */}
-          <Link to="/" className="flex flex-col items-start" onClick={() => { setIsMobileMenuOpen(false); setIsMobileSearchOpen(false); }}>
+          <Link to="/" className="flex flex-col items-start flex-shrink-0" onClick={() => { setIsMobileMenuOpen(false); setIsMobileSearchOpen(false); }}>
             <img src={logo} alt="PujaDukaan Logo" className="h-8 md:h-12 w-auto object-contain" />
             
           </Link>
 
-          {/* Desktop Search Bar (Hidden on Mobile) */}
-          <div className="hidden md:flex flex-grow max-w-xl mx-8 items-center gap-3">
+          {/* =========================================
+              DESKTOP SEARCH & BUTTONS (Hidden on Mobile)
+          ========================================= */}
+          <div className="hidden md:flex flex-grow max-w-3xl mx-6 lg:mx-8 items-center gap-3">
             <form onSubmit={handleSearchSubmit} className="flex-grow flex items-center bg-white border border-gray-300 rounded-sm px-3 py-1.5 focus-within:border-[#8b1818] transition-all">
               <input 
                 type="text" 
@@ -103,15 +100,36 @@ const Navbar = () => {
                 <Search className="w-5 h-5" />
               </button>
             </form>
+
+            {/* 🔥 BUTTON 1: Send List on WhatsApp */}
+            <a 
+              href={`https://wa.me/${whatsappNumber}?text=Hare%20Krishna!%20Mujhe%20apni%20pooja%20samagri%20ki%20list%20bhejni%20hai:`}
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-[#25D366] hover:bg-[#1ebd5a] text-white px-3 py-2 rounded-sm text-xs font-bold whitespace-nowrap shadow-sm transition-colors"
+            >
+              <MessageCircle className="w-4 h-4" /> Send List
+            </a>
+
+            {/* 🔥 BUTTON 2: Book Pandit Ji */}
+            <a 
+              href={`https://wa.me/${whatsappNumber}?text=Pranam!%20Mujhe%20Pandit%20Ji%20book%20karne%20ke%20liye%20enquiry%20karni%20hai.`}
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-[#f7941d] hover:bg-[#e0861a] text-white px-3 py-2 rounded-sm text-xs font-bold whitespace-nowrap shadow-sm transition-colors"
+            >
+              <CalendarClock className="w-4 h-4" /> Book Pandit
+            </a>
           </div>
 
-          {/* Right Side: Cart, WhatsApp, Menu (Exact order as image) */}
-          <div className="flex items-center gap-4 md:gap-6">
+          {/* =========================================
+              RIGHT SIDE ICONS (Mobile & Desktop)
+          ========================================= */}
+          <div className="flex items-center gap-4 md:gap-6 flex-shrink-0">
             
             {/* 1. Shopping Bag with Badge */}
             <div className="relative">
               <Link to="/cart" className="relative text-gray-800 hover:text-[#8b1818] transition-colors block">
-                {/* Changed to ShoppingBag-like icon from lucide, using ShoppingCart for now, adjust if needed */}
                 <ShoppingCart className="w-6 h-6 md:w-7 md:h-7" strokeWidth={1.5} />
                 <span className="absolute -top-1.5 -right-2 bg-[#d32f2f] text-white text-[11px] font-bold h-[18px] min-w-[18px] px-1 flex items-center justify-center rounded-full">
                   {cartCount}
@@ -156,7 +174,9 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Desktop Navigation Links (Below Header) */}
+        {/* =========================================
+            DESKTOP NAVIGATION LINKS
+        ========================================= */}
         <div className="hidden md:flex border-t border-gray-200 bg-white shadow-sm">
           <div className="max-w-7xl mx-auto px-8 py-2.5 flex gap-8 text-[14px] font-semibold text-gray-700 tracking-wide">
             <Link to="/" className={`${isActive('/') ? 'text-[#8b1818]' : 'hover:text-[#8b1818]'}`}>Home</Link>
