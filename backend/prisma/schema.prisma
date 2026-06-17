@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql" // Hum MySQL use kar rahe hain
+  provider = "mysql" 
   url      = env("DATABASE_URL")
 }
 
@@ -25,7 +25,6 @@ enum DeliveryStatus {
   FAILED
 }
 
-// Order status ke liye strict Enum
 enum OrderStatus {
   PENDING
   CONFIRMED
@@ -40,9 +39,8 @@ enum OrderStatus {
 model User {
   id            Int            @id @default(autoincrement())
   name          String
-  // 🔥 FIX: email aur mobileNumber ko required (bina ?) aur unique banaya hai frontend ke hisaab se
-  email         String         @unique 
-  mobileNumber  String         @unique 
+  email         String         @unique // REQUIRED KIYA HAI
+  mobileNumber  String         @unique // NAYA FIELD ADD KIYA HAI
   password      String?        
   otp           String?        
   otpExpiry     DateTime?      
@@ -112,7 +110,6 @@ model Product {
   stockQuantity   Int       @default(0)
   deliveryCharge  Float     @default(0) 
   
-  // Trending section me product dikhane ke liye toggle
   isTrending      Boolean   @default(false) 
   
   createdAt       DateTime  @default(now())
@@ -139,14 +136,12 @@ model Order {
   discount        Float       @default(0) 
   couponApplied   String?  
   
-  // 👇 YAHAN ADD KIYA HAI SHIPPING ADDRESS
   shippingAddress String      @db.Text
   
   status          OrderStatus @default(PENDING) 
   
-  // Payment tracking
-  paymentMethod   String      @default("COD") // e.g., "COD", "RAZORPAY"
-  paymentStatus   String      @default("PENDING") // e.g., "PENDING", "SUCCESS", "FAILED"
+  paymentMethod   String      @default("COD") 
+  paymentStatus   String      @default("PENDING") 
   transactionId   String?     
   
   createdAt       DateTime    @default(now())
@@ -172,7 +167,7 @@ model OrderItem {
 model Coupon {
   id            Int      @id @default(autoincrement())
   code          String   @unique
-  discountType  String   // "FIXED" ya "PERCENTAGE"
+  discountType  String   
   discountValue Float
   minOrderValue Float    @default(0)
   expiryDate    DateTime
@@ -187,7 +182,7 @@ model Coupon {
 model DayCarousel {
   id        Int     @id @default(autoincrement())
   dayOfWeek String   
-  imageUrl  String  @db.Text // @db.Text lagana better hai agar array bohot bada ho jaye
+  imageUrl  String  @db.Text 
   isActive  Boolean @default(true)
 }
 
@@ -199,7 +194,7 @@ model SiteSetting {
   whatsappNumber    String? 
   facebookUrl       String?
   instagramUrl      String?
-  trendingBannerUrl String? @db.Text // Stringified array accept karne ke liye
+  trendingBannerUrl String? @db.Text 
   trendingTitle     String?
 }
 
