@@ -6,7 +6,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 
 const Navbar = () => {
-  const { cartCount, showCartIndicator } = useContext(CartContext);
+  // 🔥 FIX: Directly cartItems nikal rahe hain context se
+  const { cartItems, showCartIndicator } = useContext(CartContext);
   const navigate = useNavigate();
   const location = useLocation();
   const token = localStorage.getItem('token'); 
@@ -18,6 +19,10 @@ const Navbar = () => {
   const [whatsappNumber, setWhatsappNumber] = useState('910000000000'); 
 
   const API_BASE_URL = 'https://arpancart-production.up.railway.app/api';
+
+  // 🔥 FIX: Live cart count calculate karna
+  // Ye har item ki quantity ko add karega, taaki ekdum real-time number dikhe
+  const cartCount = cartItems ? cartItems.reduce((total, item) => total + (item.quantity || 1), 0) : 0;
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -81,7 +86,6 @@ const Navbar = () => {
           {/* Left Side: Logo & Tagline */}
           <Link to="/" className="flex flex-col items-start flex-shrink-0" onClick={() => { setIsMobileMenuOpen(false); setIsMobileSearchOpen(false); }}>
             <img src={logo} alt="PujaDukaan Logo" className="h-8 md:h-12 w-auto object-contain" />
-            
           </Link>
 
           {/* =========================================
@@ -101,7 +105,7 @@ const Navbar = () => {
               </button>
             </form>
 
-            {/* 🔥 BUTTON 1: Send List on WhatsApp */}
+            {/* BUTTON 1: Send List on WhatsApp */}
             <a 
               href={`https://wa.me/${whatsappNumber}?text=Hare%20Krishna!%20Mujhe%20apni%20pooja%20samagri%20ki%20list%20bhejni%20hai:`}
               target="_blank" 
@@ -111,7 +115,7 @@ const Navbar = () => {
               <MessageCircle className="w-4 h-4" /> Send List
             </a>
 
-            {/* 🔥 BUTTON 2: Book Pandit Ji */}
+            {/* BUTTON 2: Book Pandit Ji */}
             <a 
               href={`https://wa.me/${whatsappNumber}?text=Pranam!%20Mujhe%20Pandit%20Ji%20book%20karne%20ke%20liye%20enquiry%20karni%20hai.`}
               target="_blank" 

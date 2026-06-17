@@ -21,6 +21,9 @@ const Subscriptions = () => {
     days: []
   });
 
+  // Validation Error State
+  const [formError, setFormError] = useState('');
+
   const API_BASE_URL = 'https://arpancart-production.up.railway.app/api';
 
   useEffect(() => {
@@ -54,6 +57,7 @@ const Subscriptions = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (formError) setFormError('');
   };
 
   const handleDayChange = (day) => {
@@ -71,11 +75,9 @@ const Subscriptions = () => {
     });
   };
 
-  // 🔥 SENIOR DEV LOGIC: Card Click & Smooth Scroll
   const handlePackageSelect = (planId) => {
     setFormData(prev => ({ ...prev, packageId: planId }));
     
-    // Smoothly scroll down to the form
     const formElement = document.getElementById('subscription-form');
     if (formElement) {
       formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -84,8 +86,16 @@ const Subscriptions = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setFormError(''); 
+
     if (!formData.fullName || !formData.phone || !formData.address || !formData.packageId || formData.days.length === 0) {
-      alert("Please fill all required fields and select at least one day.");
+      setFormError("Please fill all required fields and select at least one day.");
+      return;
+    }
+
+    const patnaPincodeRegex = /^(800|801)\d{3}$/;
+    if (!patnaPincodeRegex.test(formData.pincode)) {
+      setFormError("Sorry, we currently deliver subscriptions only in Patna (Pincodes starting with 800 or 801).");
       return;
     }
     
@@ -98,23 +108,18 @@ const Subscriptions = () => {
   return (
     <div className="bg-[#fcfaf5] min-h-screen font-sans text-gray-800 pb-20">
       
-      {/* =========================================
-          HERO SECTION
-      ========================================= */}
+      {/* HERO SECTION */}
       <div className="bg-[#8b1818] text-white py-12 md:py-16 px-4 text-center">
-        <h1 className="text-3xl md:text-5xl font-extrabold mb-4 font-normal tracking-tight">Daily Fresh Puja Flowers</h1>
+        <h1 className="text-3xl md:text-5xl font-extrabold mb-4 tracking-wide">Daily Fresh Puja Flowers</h1>
         <p className="text-white/80 max-w-2xl mx-auto text-sm md:text-base font-medium">
           Select your preferred package below, fill in your details, and get fresh flowers delivered silently to your doorstep every morning.
         </p>
       </div>
 
-      {/* =========================================
-          SECTION 1: PRICING CARDS (Moved to TOP)
-      ========================================= */}
+      {/* SECTION 1: PRICING CARDS */}
       <div className="py-12 bg-[#fcfaf5]">
         <div className="max-w-5xl mx-auto px-4">
           
-          {/* Location Bar */}
           <div className="w-full max-w-4xl mx-auto bg-[#facbaf] hover:bg-[#f3bc9d] cursor-default transition-colors rounded-full py-3 px-6 flex justify-center md:justify-between items-center mb-12 shadow-sm">
             <div className="flex items-center gap-3 text-gray-900 font-bold">
               <MapPin className="w-5 h-5 text-[#8b1818]" />
@@ -122,10 +127,13 @@ const Subscriptions = () => {
             </div>
           </div>
 
-          <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl font-extrabold text-black mb-3  tracking-tight">Choose Your Package</h2>
-            <div className="w-20 h-1 bg-[#f7941d] mx-auto rounded-full"></div>
-            <p className="text-gray-500 mt-3 font-medium text-sm">Click on a package to select it and proceed to details</p>
+          {/* 🔥 FIX: Exact Image Style Matching */}
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-[40px] font-extrabold text-black mb-4 tracking-tight">
+              Daily Puja Flowers Packages
+            </h2>
+            <div className="w-40 md:w-56 h-1 bg-[#f7941d] mx-auto"></div>
+            <p className="text-gray-500 mt-4 font-medium text-sm">Click on a package to select it and proceed to details</p>
           </div>
 
           {loading ? (
@@ -145,7 +153,6 @@ const Subscriptions = () => {
                       : 'border-green-500 hover:shadow-xl hover:-translate-y-1'
                   }`}
                 >
-                  {/* Selection Badge */}
                   {formData.packageId === plans[0].id && (
                     <div className="absolute top-3 right-3 bg-[#14532d] text-white rounded-full p-1 z-20">
                       <CheckCircle2 className="w-6 h-6" />
@@ -165,14 +172,13 @@ const Subscriptions = () => {
                       <li className="flex items-center gap-2 text-sm text-[#14532d] font-semibold"><Check className="w-4 h-4 stroke-[3] text-green-600"/> Tulsi</li>
                     </ul>
                   </div>
-                  {/* Select Button */}
                   <div className={`py-4 text-center font-bold text-sm uppercase tracking-wider transition-colors ${formData.packageId === plans[0].id ? 'bg-[#14532d] text-white' : 'bg-green-500 text-white'}`}>
                     {formData.packageId === plans[0].id ? 'Selected' : 'Select Plan'}
                   </div>
                 </div>
               )}
 
-              {/* Box 2: Premium (Yellow/Orange) - Recommended */}
+              {/* Box 2: Premium (Yellow/Orange) */}
               {plans[1] && (
                 <div 
                   onClick={() => handlePackageSelect(plans[1].id)}
@@ -186,7 +192,6 @@ const Subscriptions = () => {
                     Recommended
                   </div>
                   
-                  {/* Selection Badge */}
                   {formData.packageId === plans[1].id && (
                     <div className="absolute top-10 right-3 bg-[#c21820] text-white rounded-full p-1 z-20">
                       <CheckCircle2 className="w-6 h-6" />
@@ -208,7 +213,6 @@ const Subscriptions = () => {
                       <li className="flex items-center gap-2 text-sm text-[#78350f] font-semibold"><Check className="w-4 h-4 stroke-[3] text-[#b45309]"/> Genda Mala 1 pc</li>
                     </ul>
                   </div>
-                  {/* Select Button */}
                   <div className={`py-4 text-center font-bold text-sm uppercase tracking-wider transition-colors ${formData.packageId === plans[1].id ? 'bg-[#c21820] text-white' : 'bg-[#f59e0b] text-[#78350f]'}`}>
                     {formData.packageId === plans[1].id ? 'Selected' : 'Select Plan'}
                   </div>
@@ -236,10 +240,7 @@ const Subscriptions = () => {
         </div>
       </div>
 
-      {/* =========================================
-          SECTION 2: THE INQUIRY/ORDER FORM
-          (UPDATED WITH REQUESTED FONT/TYPOGRAPHY STYLE)
-      ========================================= */}
+      {/* SECTION 2: THE INQUIRY/ORDER FORM */}
       <div id="subscription-form" className="max-w-4xl mx-auto px-4 py-16 scroll-mt-20">
         <div className="bg-white rounded-xl p-8 md:p-10 shadow-sm border border-gray-100">
           
@@ -248,6 +249,12 @@ const Subscriptions = () => {
               Get Fresh Puja Flowers daily at your doorstep
             </h2>
           </div>
+
+          {formError && (
+            <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
+              <p className="text-red-700 text-sm font-bold">{formError}</p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-8">
             
@@ -271,7 +278,7 @@ const Subscriptions = () => {
               </div>
               <div className="space-y-1.5">
                 <label className="text-[14px] font-bold text-[#666666] block">Pincode <span className="text-red-500">*</span></label>
-                <input type="text" name="pincode" value={formData.pincode} onChange={handleInputChange} className="w-full border border-[#d1d5db] rounded-lg px-4 py-3 focus:outline-none focus:border-gray-400 bg-[#fbfbfb] text-gray-800 transition-colors" required />
+                <input type="text" name="pincode" value={formData.pincode} onChange={handleInputChange} placeholder="e.g. 800001" className="w-full border border-[#d1d5db] rounded-lg px-4 py-3 focus:outline-none focus:border-gray-400 bg-[#fbfbfb] text-gray-800 transition-colors" required />
               </div>
             </div>
 
@@ -281,8 +288,6 @@ const Subscriptions = () => {
               </h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                
-                {/* Package Auto-sync */}
                 <div className="space-y-1.5">
                   <label className="text-[14px] font-bold text-[#666666] block">Flower Package <span className="text-red-500">*</span></label>
                   <select 
@@ -299,7 +304,6 @@ const Subscriptions = () => {
                   </select>
                 </div>
 
-                {/* Days Selector */}
                 <div className="space-y-3">
                   <label className="text-[14px] font-bold text-[#666666] block mb-3">Days <span className="text-red-500">*</span></label>
                   <div className="grid grid-cols-2 gap-y-3">
@@ -345,19 +349,15 @@ const Subscriptions = () => {
         </div>
       </div>
 
-      {/* =========================================
-          SECTION 3: PANDIT JI BANNER
-      ========================================= */}
+      {/* SECTION 3: PANDIT JI BANNER */}
       <div className="max-w-6xl mx-auto px-4 mb-10">
         <div className="relative bg-gradient-to-br from-[#8b1818] via-[#751111] to-[#4a0808] rounded-3xl overflow-hidden shadow-2xl p-8 md:p-14 flex flex-col md:flex-row items-center justify-between gap-8">
           
-          {/* Decorative Elements */}
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#f7941d] rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
           <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-[#ffb86c] rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
 
-          {/* Content */}
           <div className="relative z-10 text-center md:text-left flex-1">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-normal tracking-tight text-white mb-4 ">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white mb-4 tracking-tight">
               Got a list from your Pandit Ji?
             </h2>
             <p className="text-white/80 text-lg md:text-xl font-medium max-w-xl">
@@ -365,10 +365,9 @@ const Subscriptions = () => {
             </p>
           </div>
 
-          {/* Button */}
           <div className="relative z-10 flex-shrink-0">
             <a 
-              href={`https://wa.me/${whatsappNumber}?text=Pranam!%20Ye%20rahi%20meri%20Pandit%20Ji%20ki%20list:%20`}
+              href={`https://wa.me/${whatsappNumber}?text=Hare%20Krishna!%20Mujhe%20apni%20pooja%20samagri%20ki%20list%20bhejni%20hai.`}
               target="_blank" rel="noopener noreferrer"
               className="group flex items-center gap-3 bg-white text-[#8b1818] px-8 py-4 rounded-full font-bold text-lg shadow-[0_10px_20px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_30px_rgba(0,0,0,0.3)] hover:scale-105 transition-all duration-300"
             >

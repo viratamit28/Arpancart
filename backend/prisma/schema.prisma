@@ -40,8 +40,9 @@ enum OrderStatus {
 model User {
   id            Int            @id @default(autoincrement())
   name          String
-  email         String?        @unique 
-  phone         String?        @unique 
+  // 🔥 FIX: email aur mobileNumber ko required (bina ?) aur unique banaya hai frontend ke hisaab se
+  email         String         @unique 
+  mobileNumber  String         @unique 
   password      String?        
   otp           String?        
   otpExpiry     DateTime?      

@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { TrendingUp, Sparkles, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import DefaultTrending from '../assets/2.jpg'; 
+import { CartContext } from '../context/CartContext'; 
 
 const TrendingBanner = () => {
   const [trendingProducts, setTrendingProducts] = useState([]);
@@ -12,14 +13,16 @@ const TrendingBanner = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // 🔥 Slider ke states aur refs
+  const [addingProducts, setAddingProducts] = useState({});
+  const { addToCart } = useContext(CartContext);
+  
   const scrollContainerRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
   
   const navigate = useNavigate();
   const API_BASE_URL = 'https://arpancart-production.up.railway.app/api'; 
 
-  // 1. Data Fetching Logic (NO LOGIC CHANGES)
+  // 1. Data Fetching (Exact Admin Panel Logic)
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -76,7 +79,6 @@ const TrendingBanner = () => {
     fetchData();
   }, []);
 
-  // 2. Auto-Slide Logic for Banners (NO LOGIC CHANGES)
   useEffect(() => {
     if (bannerImages.length > 1) {
       const interval = setInterval(() => {
@@ -86,7 +88,6 @@ const TrendingBanner = () => {
     }
   }, [bannerImages.length]);
 
-  // 3. Auto-Slide Logic for PRODUCTS SLIDER (NO LOGIC CHANGES)
   useEffect(() => {
     if (isHovered || trendingProducts.length === 0) return;
     
@@ -106,7 +107,6 @@ const TrendingBanner = () => {
     return () => clearInterval(intervalId);
   }, [isHovered, trendingProducts]);
 
-  // 4. Manual Scroll for Arrows (NO LOGIC CHANGES)
   const scroll = (direction) => {
     if (scrollContainerRef.current) {
       const scrollAmount = window.innerWidth < 640 ? 260 : 320; 
@@ -121,7 +121,6 @@ const TrendingBanner = () => {
     navigate('/shop?trending=true'); 
   };
 
-  // Helper function to safely extract image
   const getProductImage = (product) => {
     if (!product.imageUrl) return "https://placehold.co/400x500/fcfaf5/8b1818?text=Product";
     try {
@@ -132,6 +131,41 @@ const TrendingBanner = () => {
     } catch (e) {
       return product.imageUrl;
     }
+  };
+
+  // ADD TO CART LOGIC
+  const handleAddToCart = (e, product) => {
+    e.stopPropagation(); 
+    const productId = product.id || product._id; 
+    
+    setAddingProducts(prev => ({ ...prev, [productId]: true }));
+
+    try {
+      if (addToCart) {
+        // Formatted Item for CartContext
+        const cartFormattedItem = {
+          id: productId, 
+          title: product.title || product.name || "Divine Puja Item", 
+          price: product.price || 0,
+          originalPrice: product.originalPrice || product.mrp || 0,
+          imageUrl: getProductImage(product), 
+          deliveryCharge: product.deliveryCharge || 0,
+          category: product.category || "General",
+          isSubscription: product.isSubscription || false,
+          quantity: 1
+        };
+
+        addToCart(cartFormattedItem);
+      } else {
+        console.error("CartContext me addToCart nahi mila!");
+      }
+    } catch (error) {
+      console.error("Cart update error:", error);
+    }
+
+    setTimeout(() => {
+      setAddingProducts(prev => ({ ...prev, [productId]: false }));
+    }, 600);
   };
 
   return (
@@ -154,9 +188,7 @@ const TrendingBanner = () => {
 
       <div className="max-w-7xl mx-auto">
         
-        {/* =========================================
-            PREMIUM TITLE SECTION 
-        ========================================= */}
+        {/* PREMIUM TITLE SECTION */}
         <div className="flex flex-col items-center justify-center mb-10 md:mb-16 animate-slide-up">
           <p className="text-[#f7941d] font-extrabold uppercase tracking-[0.2em] text-[10px] sm:text-xs mb-3 flex items-center gap-2">
             <Sparkles className="w-3 h-3" /> Season's Special <Sparkles className="w-3 h-3" />
@@ -170,9 +202,7 @@ const TrendingBanner = () => {
           </div>
         </div>
 
-        {/* =========================================
-            DYNAMIC SLIDING HERO BANNER 
-        ========================================= */}
+        {/* DYNAMIC SLIDING HERO BANNER */}
         <div className="relative w-full h-[280px] sm:h-[350px] md:h-[450px] rounded-lg md:rounded-xl overflow-hidden mb-12 sm:mb-16 md:mb-20 animate-slide-up group cursor-pointer shadow-[0_15px_40px_rgba(139,24,24,0.12)] border border-orange-50/50">
           {bannerImages.map((imgUrl, idx) => (
             <img 
@@ -212,9 +242,7 @@ const TrendingBanner = () => {
           )}
         </div>
 
-        {/* =========================================
-            PRODUCTS SLIDER / GRID HYBRID
-        ========================================= */}
+        {/* PRODUCTS SLIDER / GRID HYBRID */}
         <div>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 sm:mb-8 animate-slide-up gap-4" style={{ animationDelay: '0.2s' }}>
             <div>
@@ -254,26 +282,29 @@ const TrendingBanner = () => {
                 {trendingProducts.map((product, index) => {
                   const mrp = product.originalPrice || product.mrp || 0;
                   const price = product.price || 0;
+                  const productId = product.id || product._id;
+                  const isAdding = addingProducts[productId];
+                  
+                  const displayTitle = product.title || product.name || "Divine Puja Item";
                   
                   return (
                     <div 
-                      key={product.id || product._id}
+                      key={productId}
                       className="animate-slide-up w-full h-full sm:flex-shrink-0 sm:w-[280px] md:w-[320px] sm:snap-center"
                       style={{ animationDelay: `${(index + 2) * 0.1}s` }}
                     >
-                      {/* 🔥 INLINE PRODUCT CARD (Photo Jaisa Exact Design) 🔥 */}
                       <div className="flex flex-col bg-white border border-[#f0e6d2] rounded-xl overflow-hidden h-full shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-lg transition-shadow duration-300">
                         
                         {/* 1. Image Section */}
-                        <div className="w-full aspect-[4/5] bg-[#fdfbf7] p-2 flex items-center justify-center relative cursor-pointer" onClick={() => navigate(`/product/${product.id || product._id}`)}>
+                        <div className="w-full aspect-[4/5] bg-[#fdfbf7] p-2 flex items-center justify-center relative cursor-pointer" onClick={() => navigate(`/product/${productId}`)}>
                           <img 
                             src={getProductImage(product)} 
-                            alt={product.name || "Product"} 
+                            alt={displayTitle} 
                             className="w-full h-full object-contain drop-shadow-sm mix-blend-multiply"
                           />
-                          {/* HOT Badge */}
+                          {/* 🔥 FIX: Changed "HOT" to "Top Picks" */}
                           <span className="absolute top-2 left-2 bg-red-100 text-[#8b1818] text-[10px] font-bold px-2 py-0.5 rounded-sm">
-                            HOT
+                            Top Picks
                           </span>
                         </div>
 
@@ -282,9 +313,9 @@ const TrendingBanner = () => {
                           
                           <h3 
                             className="text-[12px] sm:text-sm font-semibold text-gray-800 line-clamp-2 leading-tight mb-2 min-h-[2rem] sm:min-h-[2.5rem] cursor-pointer hover:text-[#8b1818]"
-                            onClick={() => navigate(`/product/${product.id || product._id}`)}
+                            onClick={() => navigate(`/product/${productId}`)}
                           >
-                            {product.name || "Divine Puja Item"}
+                            {displayTitle}
                           </h3>
 
                           {/* 3. Pricing Section */}
@@ -303,20 +334,27 @@ const TrendingBanner = () => {
                             </span>
                           </div>
 
-                          {/* 4. Add to Cart Pill Button */}
-                          <button className="w-full bg-[#8b1818] hover:bg-[#6b1212] text-white py-2 sm:py-2.5 rounded-full text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all active:scale-95 shadow-sm">
-                            Add to Cart
+                          {/* 4. REAL Add to Cart Pill Button */}
+                          <button 
+                            onClick={(e) => handleAddToCart(e, product)}
+                            disabled={isAdding}
+                            className={`w-full py-2 sm:py-2.5 rounded-full text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all active:scale-95 shadow-sm ${
+                              isAdding 
+                                ? 'bg-green-600 text-white cursor-not-allowed' 
+                                : 'bg-[#8b1818] hover:bg-[#6b1212] text-white'
+                            }`}
+                          >
+                            {isAdding ? 'Added ✓' : 'Add to Cart'}
                           </button>
 
                         </div>
                       </div>
-                      {/* 🔥 END INLINE CARD 🔥 */}
                     </div>
                   );
                 })}
               </div>
 
-              {/* NAVIGATION ARROWS (Hidden on mobile, visible on slider) */}
+              {/* Slider Arrows */}
               {trendingProducts.length > 1 && (
                 <div className="hidden sm:flex items-center justify-center mt-2 gap-6 animate-slide-up" style={{ animationDelay: '0.8s' }}>
                   <button 
@@ -336,7 +374,7 @@ const TrendingBanner = () => {
             </div>
           )}
 
-          {/* Mobile View All Button */}
+          {/* Mobile View All */}
           <div className="mt-6 sm:hidden animate-slide-up" style={{ animationDelay: '0.6s' }}>
             <button onClick={handleShopNowClick} className="w-full border-2 border-[#8b1818] text-[#8b1818] font-extrabold py-3.5 rounded-md uppercase tracking-wider text-[13px] hover:bg-[#8b1818] hover:text-white transition-colors active:scale-[0.98]">
               View All Trending
