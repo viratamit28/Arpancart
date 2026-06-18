@@ -161,12 +161,14 @@ const getActivePlans = async (req, res) => {
 // Admin ke liye: Create New Plan
 const createPlan = async (req, res) => {
   try {
-    const { name, price, durationDays } = req.body;
+    // 🔥 YAHAN DESCRIPTION ADD KIYA HAI
+    const { name, price, durationDays, description } = req.body; 
     const newPlan = await prisma.subscriptionPlan.create({
       data: {
         name,
         price: parseFloat(price),
         durationDays: parseInt(durationDays),
+        description, // 🔥 YAHAN DATABASE MEIN BHEJA HAI
         isActive: true
       }
     });

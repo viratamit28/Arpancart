@@ -127,7 +127,6 @@ const Subscriptions = () => {
             </div>
           </div>
 
-          {/* 🔥 FIX: Exact Image Style Matching */}
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-[40px] font-extrabold text-black mb-4 tracking-tight">
               Daily Puja Flowers Packages
@@ -143,83 +142,72 @@ const Subscriptions = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6 max-w-5xl mx-auto items-stretch">
               
-              {/* Box 1: Basic (Green) */}
-              {plans[0] && (
-                <div 
-                  onClick={() => handlePackageSelect(plans[0].id)}
-                  className={`flex flex-col border-2 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 relative ${
-                    formData.packageId === plans[0].id 
-                      ? 'border-[#14532d] ring-4 ring-[#14532d]/20 scale-[1.02] shadow-2xl' 
-                      : 'border-green-500 hover:shadow-xl hover:-translate-y-1'
-                  }`}
-                >
-                  {formData.packageId === plans[0].id && (
-                    <div className="absolute top-3 right-3 bg-[#14532d] text-white rounded-full p-1 z-20">
-                      <CheckCircle2 className="w-6 h-6" />
+              {/* 🔥 DYNAMIC PLANS MAPPING */}
+              {plans.map((plan, index) => {
+                // Keep the exact same alternating color theme you had
+                const isGreenTheme = index % 2 === 0;
+
+                return (
+                  <div 
+                    key={plan.id}
+                    onClick={() => handlePackageSelect(plan.id)}
+                    className={`flex flex-col border-2 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 relative ${
+                      formData.packageId === plan.id 
+                        ? (isGreenTheme ? 'border-[#14532d] ring-4 ring-[#14532d]/20 scale-[1.02] shadow-2xl' : 'border-[#c21820] ring-4 ring-[#c21820]/20 scale-[1.03] shadow-2xl z-10')
+                        : (isGreenTheme ? 'border-green-500 hover:shadow-xl hover:-translate-y-1' : 'border-[#f59e0b] hover:shadow-xl hover:-translate-y-1')
+                    }`}
+                  >
+                    {/* Only show 'Recommended' for the 2nd item like before */}
+                    {index === 1 && (
+                      <div className="absolute top-0 w-full bg-[#c21820] text-white text-center py-1.5 text-xs font-bold tracking-widest uppercase z-10">
+                        Recommended
+                      </div>
+                    )}
+
+                    {formData.packageId === plan.id && (
+                      <div className={`absolute ${index === 1 ? 'top-10' : 'top-3'} right-3 ${isGreenTheme ? 'bg-[#14532d]' : 'bg-[#c21820]'} text-white rounded-full p-1 z-20`}>
+                        <CheckCircle2 className="w-6 h-6" />
+                      </div>
+                    )}
+
+                    <div className={`p-6 ${index === 1 ? 'pt-12' : ''} text-center border-b-2 ${isGreenTheme ? 'border-green-500 bg-[#e6ffe6]' : 'border-[#f59e0b] bg-[#fef3c7]'}`}>
+                      <h3 className={`text-2xl font-bold ${isGreenTheme ? 'text-[#14532d]' : 'text-[#78350f]'} mb-4`}>
+                        ₹{Math.round(plan.price / plan.durationDays)}/day
+                      </h3>
+                      <div className={`h-px w-full ${isGreenTheme ? 'bg-green-500/30' : 'bg-[#f59e0b]/30'} mb-4`}></div>
+                      <h4 className={`text-xl font-serif font-bold ${isGreenTheme ? 'text-[#14532d]' : 'text-[#78350f]'} leading-tight px-2`}>{plan.name}</h4>
                     </div>
-                  )}
 
-                  <div className="p-6 text-center border-b-2 border-green-500 bg-[#e6ffe6]">
-                    <h3 className="text-2xl font-bold text-[#14532d] mb-4">₹{Math.round(plans[0].price / plans[0].durationDays)}/day</h3>
-                    <div className="h-px w-full bg-green-500/30 mb-4"></div>
-                    <h4 className="text-xl font-serif font-bold text-[#14532d] leading-tight px-2">{plans[0].name}</h4>
-                  </div>
-                  <div className="p-6 bg-[#dcfce7] flex-grow">
-                    <ul className="space-y-3">
-                      <li className="flex items-center gap-2 text-sm text-[#14532d] font-semibold"><Check className="w-4 h-4 stroke-[3] text-green-600"/> Marigold 6 pcs</li>
-                      <li className="flex items-center gap-2 text-sm text-[#14532d] font-semibold"><Check className="w-4 h-4 stroke-[3] text-green-600"/> Assorted Flowers</li>
-                      <li className="flex items-center gap-2 text-sm text-[#14532d] font-semibold"><Check className="w-4 h-4 stroke-[3] text-green-600"/> Durba</li>
-                      <li className="flex items-center gap-2 text-sm text-[#14532d] font-semibold"><Check className="w-4 h-4 stroke-[3] text-green-600"/> Tulsi</li>
-                    </ul>
-                  </div>
-                  <div className={`py-4 text-center font-bold text-sm uppercase tracking-wider transition-colors ${formData.packageId === plans[0].id ? 'bg-[#14532d] text-white' : 'bg-green-500 text-white'}`}>
-                    {formData.packageId === plans[0].id ? 'Selected' : 'Select Plan'}
-                  </div>
-                </div>
-              )}
-
-              {/* Box 2: Premium (Yellow/Orange) */}
-              {plans[1] && (
-                <div 
-                  onClick={() => handlePackageSelect(plans[1].id)}
-                  className={`flex flex-col border-2 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 relative ${
-                    formData.packageId === plans[1].id 
-                      ? 'border-[#c21820] ring-4 ring-[#c21820]/20 scale-[1.03] shadow-2xl z-10' 
-                      : 'border-[#f59e0b] hover:shadow-xl hover:-translate-y-1'
-                  }`}
-                >
-                  <div className="absolute top-0 w-full bg-[#c21820] text-white text-center py-1.5 text-xs font-bold tracking-widest uppercase z-10">
-                    Recommended
-                  </div>
-                  
-                  {formData.packageId === plans[1].id && (
-                    <div className="absolute top-10 right-3 bg-[#c21820] text-white rounded-full p-1 z-20">
-                      <CheckCircle2 className="w-6 h-6" />
+                    {/* 🔥 DYNAMIC DESCRIPTION BULLET POINTS */}
+                    <div className={`p-6 flex-grow ${isGreenTheme ? 'bg-[#dcfce7]' : 'bg-[#fde68a]'}`}>
+                      <ul className="space-y-3">
+                        {plan.description ? (
+                          plan.description.split(',').map((feature, i) => (
+                            <li key={i} className={`flex items-center gap-2 text-sm font-semibold ${isGreenTheme ? 'text-[#14532d]' : 'text-[#78350f]'}`}>
+                              <Check className={`w-4 h-4 stroke-[3] ${isGreenTheme ? 'text-green-600' : 'text-[#b45309]'}`}/> 
+                              {feature.trim()}
+                            </li>
+                          ))
+                        ) : (
+                          <li className={`flex items-center gap-2 text-sm font-semibold ${isGreenTheme ? 'text-[#14532d]' : 'text-[#78350f]'}`}>
+                            <Check className={`w-4 h-4 stroke-[3] ${isGreenTheme ? 'text-green-600' : 'text-[#b45309]'}`}/> Basic Puja Samagri
+                          </li>
+                        )}
+                      </ul>
                     </div>
-                  )}
 
-                  <div className="p-6 pt-12 text-center border-b-2 border-[#f59e0b] bg-[#fef3c7]">
-                    <h3 className="text-2xl font-bold text-[#78350f] mb-4">₹{Math.round(plans[1].price / plans[1].durationDays)}/day</h3>
-                    <div className="h-px w-full bg-[#f59e0b]/30 mb-4"></div>
-                    <h4 className="text-xl font-serif font-bold text-[#78350f] leading-tight px-2">{plans[1].name}</h4>
+                    <div className={`py-4 text-center font-bold text-sm uppercase tracking-wider transition-colors ${
+                      formData.packageId === plan.id 
+                        ? (isGreenTheme ? 'bg-[#14532d] text-white' : 'bg-[#c21820] text-white')
+                        : (isGreenTheme ? 'bg-green-500 text-white' : 'bg-[#f59e0b] text-[#78350f]')
+                    }`}>
+                      {formData.packageId === plan.id ? 'Selected' : 'Select Plan'}
+                    </div>
                   </div>
-                  <div className="p-6 bg-[#fde68a] flex-grow">
-                     <ul className="space-y-3">
-                      <li className="flex items-center gap-2 text-sm text-[#78350f] font-semibold"><Check className="w-4 h-4 stroke-[3] text-[#b45309]"/> Marigold 6 pcs</li>
-                      <li className="flex items-center gap-2 text-sm text-[#78350f] font-semibold"><Check className="w-4 h-4 stroke-[3] text-[#b45309]"/> Assorted Flowers</li>
-                      <li className="flex items-center gap-2 text-sm text-[#78350f] font-semibold"><Check className="w-4 h-4 stroke-[3] text-[#b45309]"/> Durba</li>
-                      <li className="flex items-center gap-2 text-sm text-[#78350f] font-semibold"><Check className="w-4 h-4 stroke-[3] text-[#b45309]"/> Tulsi</li>
-                      <li className="flex items-center gap-2 text-sm text-[#78350f] font-semibold"><Check className="w-4 h-4 stroke-[3] text-[#b45309]"/> Bel Patta</li>
-                      <li className="flex items-center gap-2 text-sm text-[#78350f] font-semibold"><Check className="w-4 h-4 stroke-[3] text-[#b45309]"/> Genda Mala 1 pc</li>
-                    </ul>
-                  </div>
-                  <div className={`py-4 text-center font-bold text-sm uppercase tracking-wider transition-colors ${formData.packageId === plans[1].id ? 'bg-[#c21820] text-white' : 'bg-[#f59e0b] text-[#78350f]'}`}>
-                    {formData.packageId === plans[1].id ? 'Selected' : 'Select Plan'}
-                  </div>
-                </div>
-              )}
+                );
+              })}
 
-              {/* Box 3: Customized (Dark Red) */}
+              {/* Box 3: Customized (Dark Red) - ALWAYS SHOWS AT THE END */}
               <div className="flex flex-col border border-[#7f1d1d] rounded-xl overflow-hidden bg-[#7f1d1d] shadow-lg relative hover:shadow-xl transition-all duration-300">
                 <div className="p-8 text-center flex flex-col items-center justify-center h-full">
                   <Sparkles className="w-8 h-8 text-[#f7941d] mb-4 opacity-80" />

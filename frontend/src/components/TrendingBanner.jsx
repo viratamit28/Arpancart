@@ -117,8 +117,10 @@ const TrendingBanner = () => {
     }
   };
 
+  // 🔥 FIX: Simplified navigation so it cleanly redirects to shop and scrolls to top
   const handleShopNowClick = () => {
-    navigate('/shop?trending=true'); 
+    navigate('/shop'); 
+    window.scrollTo(0, 0);
   };
 
   const getProductImage = (product) => {
@@ -302,7 +304,6 @@ const TrendingBanner = () => {
                             alt={displayTitle} 
                             className="w-full h-full object-contain drop-shadow-sm mix-blend-multiply"
                           />
-                          {/* 🔥 FIX: Changed "HOT" to "Top Picks" */}
                           <span className="absolute top-2 left-2 bg-red-100 text-[#8b1818] text-[10px] font-bold px-2 py-0.5 rounded-sm">
                             Top Picks
                           </span>

@@ -151,19 +151,20 @@ const Dashboard = () => {
     }
   };
 
-  // 🎨 Dynamic Badge Generator (Premium UI)
+  // 🎨 Dynamic Badge Generator (Premium UI) - FIXED
   const getStatusBadge = (status) => {
     const baseClass = "px-4 py-1.5 text-[10px] font-black rounded-full uppercase tracking-widest shadow-sm";
-    switch (status?.toUpperCase()) {
+    const displayStatus = status || 'UNKNOWN';
+    switch (displayStatus.toUpperCase()) {
       case 'PROCESSING': 
-      case 'PENDING': return `${baseClass} bg-orange-100 text-[#f7941d] border border-orange-200`;
-      case 'SHIPPED': return `${baseClass} bg-blue-100 text-blue-700 border border-blue-200`;
+      case 'PENDING': return <span className={`${baseClass} bg-orange-100 text-[#f7941d] border border-orange-200`}>{displayStatus}</span>;
+      case 'SHIPPED': return <span className={`${baseClass} bg-blue-100 text-blue-700 border border-blue-200`}>{displayStatus}</span>;
       case 'DELIVERED': 
-      case 'ACTIVE': return `${baseClass} bg-green-100 text-green-700 border border-green-200`;
-      case 'PAUSED': return `${baseClass} bg-yellow-100 text-yellow-700 border border-yellow-200`;
-      case 'COMPLETED': return `${baseClass} bg-gray-200 text-gray-800 border border-gray-300`;
-      case 'CANCELLED': return `${baseClass} bg-red-100 text-red-700 border border-red-200`;
-      default: return `${baseClass} bg-gray-100 text-gray-700`;
+      case 'ACTIVE': return <span className={`${baseClass} bg-green-100 text-green-700 border border-green-200`}>{displayStatus}</span>;
+      case 'PAUSED': return <span className={`${baseClass} bg-yellow-100 text-yellow-700 border border-yellow-200`}>{displayStatus}</span>;
+      case 'COMPLETED': return <span className={`${baseClass} bg-gray-200 text-gray-800 border border-gray-300`}>{displayStatus}</span>;
+      case 'CANCELLED': return <span className={`${baseClass} bg-red-100 text-red-700 border border-red-200`}>{displayStatus}</span>;
+      default: return <span className={`${baseClass} bg-gray-100 text-gray-700`}>{displayStatus}</span>;
     }
   };
 

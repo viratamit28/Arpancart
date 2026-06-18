@@ -17,9 +17,9 @@ const AdminDashboard = () => {
   const [products, setProducts] = useState([]); 
   const [customers, setCustomers] = useState([]); 
   
-  // DYNAMIC PLAN STATES
+  // DYNAMIC PLAN STATES (🔥 Updated to include description)
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
-  const [planForm, setPlanForm] = useState({ name: '', price: '', durationDays: '' });
+  const [planForm, setPlanForm] = useState({ name: '', price: '', durationDays: '', description: '' });
 
   // SOCIAL LINK SETTINGS STATE
   const [siteSettings, setSiteSettings] = useState({ 
@@ -86,9 +86,7 @@ const AdminDashboard = () => {
             if(data) setStats(data); 
           }).catch(checkAuth),
           
-          // 🚨 FIX: Orders Data Extra Safe Fetching
           axios.get(`${API_BASE_URL}/admin/orders`, config).then(res => { 
-            console.log("🔥 Orders Data API Response:", res.data); // Debugging ke liye
             let fetchedOrders = [];
             if (Array.isArray(res.data)) fetchedOrders = res.data;
             else if (Array.isArray(res.data?.data)) fetchedOrders = res.data.data;
@@ -101,9 +99,7 @@ const AdminDashboard = () => {
             setProducts(Array.isArray(data) ? data : []); 
           }).catch(e => console.error("Product Error")),
           
-          // 🚨 FIX: Customers Data Extra Safe Fetching
           axios.get(`${API_BASE_URL}/admin/users`, config).then(res => { 
-            console.log("🔥 Users Data API Response:", res.data); // Debugging ke liye
             let fetchedUsers = [];
             if (Array.isArray(res.data)) fetchedUsers = res.data;
             else if (Array.isArray(res.data?.data)) fetchedUsers = res.data.data;
@@ -185,7 +181,7 @@ const AdminDashboard = () => {
       const res = await axios.post(`${API_BASE_URL}/subscriptions/admin/plans`, planForm, config);
       if (res.data.success) {
         setSubscriptionPlans([...subscriptionPlans, res.data.data]);
-        setPlanForm({ name: '', price: '', durationDays: '' });
+        setPlanForm({ name: '', price: '', durationDays: '', description: '' }); // Reset
         alert("Subscription Plan Added Successfully! 🌸");
       }
     } catch (error) {
@@ -369,7 +365,6 @@ const AdminDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      // 🚨 FIX: Status Update API call. Prisma schema matches uppercase enums.
       const res = await axios.put(`${API_BASE_URL}/admin/orders/${orderId}/status`, { status: newStatus }, config);
       
       if (res.data?.success || res.status === 200) {
@@ -536,7 +531,6 @@ const AdminDashboard = () => {
                       <tr><td colSpan="5" className="p-8 text-center text-gray-500 font-bold">No orders found in database.</td></tr>
                     ) : (
                       orders.map((order) => {
-                        // Backend user fail-safe
                         const customerInfo = order.user || customers.find(c => c.id === order.userId) || {};
                         const currentStatus = order.status?.toUpperCase() || "PENDING";
                         
@@ -550,7 +544,6 @@ const AdminDashboard = () => {
                           <td className="p-4 font-medium text-gray-600">{order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
                           <td className="p-4 font-extrabold text-[#8b1818]">₹{order.totalAmount || 0}</td>
                           <td className="p-4">
-                            {/* 🚨 FIX: Strict Dropdown Enums corresponding to schema */}
                             <select 
                               value={currentStatus} 
                               onChange={(e) => handleOrderStatusChange(order.id, e.target.value)} 
@@ -591,6 +584,13 @@ const AdminDashboard = () => {
                     <label className="block text-xs font-extrabold text-gray-500 uppercase tracking-widest mb-1">Plan Name</label>
                     <input required type="text" value={planForm.name} onChange={e => setPlanForm({...planForm, name: e.target.value})} className="w-full border p-2.5 rounded-sm text-sm outline-none" placeholder="e.g. 30 Days Marigold Box" />
                   </div>
+                  
+                  {/* 🔥 NAYA DESCRIPTION FIELD YAHAN ADD KIYA HAI */}
+                  <div>
+                    <label className="block text-xs font-extrabold text-gray-500 uppercase tracking-widest mb-1">Description / Details</label>
+                    <textarea required value={planForm.description} onChange={e => setPlanForm({...planForm, description: e.target.value})} className="w-full border p-2.5 rounded-sm text-sm outline-none" placeholder="e.g. Marigold 6 pcs, Assorted Flowers, Durba" rows="3" />
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-extrabold text-gray-500 uppercase tracking-widest mb-1">Price (₹)</label>
@@ -613,10 +613,12 @@ const AdminDashboard = () => {
                 <h3 className="font-extrabold text-gray-800 uppercase tracking-wide mb-4">Active Plans on Website</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {subscriptionPlans.length === 0 ? <p className="text-gray-500 text-sm font-bold">No plans created yet.</p> : subscriptionPlans.map((plan) => (
-                    <div key={plan.id} className="border border-orange-100 bg-orange-50/30 rounded-sm p-4 flex justify-between items-center">
+                    <div key={plan.id} className="border border-orange-100 bg-orange-50/30 rounded-sm p-4 flex justify-between items-start">
                       <div>
                         <h4 className="font-extrabold text-[#8b1818]">{plan.name}</h4>
                         <p className="text-xs font-bold text-gray-600">₹{plan.price} for {plan.durationDays} Days</p>
+                        {/* 🔥 Description display in the list */}
+                        {plan.description && <p className="text-[11px] text-gray-500 mt-2 leading-tight">{plan.description}</p>}
                       </div>
                       <button onClick={() => handleDeletePlan(plan.id)} className="text-red-500 hover:bg-red-100 p-2 rounded-full transition-colors"><Trash2 className="w-4 h-4"/></button>
                     </div>

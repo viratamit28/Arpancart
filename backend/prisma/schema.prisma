@@ -204,6 +204,7 @@ model SiteSetting {
 model SubscriptionPlan {
   id           Int            @id @default(autoincrement())
   name         String         
+  description  String?        @db.Text  // 🔥 NAYA FIELD ADD KIYA HAI
   price        Float
   durationDays Int            
   isActive     Boolean        @default(true)

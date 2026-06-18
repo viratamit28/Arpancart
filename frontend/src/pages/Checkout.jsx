@@ -10,7 +10,7 @@ const Checkout = () => {
   
   const [loading, setLoading] = useState(false);
   const [pinLoading, setPinLoading] = useState(false);
-  const [saveAddress, setSaveAddress] = useState(true);
+  const [saveAddress, setSaveAddress] = useState(false);
   const [pinError, setPinError] = useState(''); 
 
   // =========================================
@@ -40,14 +40,10 @@ const Checkout = () => {
   const finalTotalAmount = itemsTotal + totalDeliveryFee - discountAmount;
 
   // =========================================
-  // 🔄 AUTO-LOAD SAVED ADDRESS
+  // 🔄 INITIAL LOAD
   // =========================================
   useEffect(() => {
     window.scrollTo(0, 0);
-    const savedAddress = localStorage.getItem('arpancart_saved_address');
-    if (savedAddress) {
-      setShippingData(JSON.parse(savedAddress));
-    }
   }, []);
 
   const handleChange = (e) => setShippingData({ ...shippingData, [e.target.name]: e.target.value });
@@ -136,7 +132,6 @@ const Checkout = () => {
       return;
     }
 
-    // Token se User ID nikalna for Subscriptions
     let userId = null;
     try {
       const payloadBase64 = token.split('.')[1];
@@ -150,16 +145,14 @@ const Checkout = () => {
       const subscriptionItems = cartItems.filter(item => item.isSubscription);
       const regularItems = cartItems.filter(item => !item.isSubscription);
 
-      // 1. Regular Products Processing (FIXED PAYLOAD)
       if (regularItems.length > 0) {
         const orderPayload = {
           items: regularItems.map(item => ({ 
-            productId: parseInt(item.id), // 🔥 Changed to productId and parsed to int
+            productId: parseInt(item.id), 
             quantity: parseInt(item.quantity), 
             price: parseFloat(item.price) 
           })),
           totalAmount: parseFloat(finalTotalAmount), 
-          // 🔥 Formatted object into a single clean string for the backend
           shippingAddress: `${shippingData.fullName}, ${shippingData.address}, ${shippingData.city}, ${shippingData.state} - ${shippingData.zipCode}. Phone: ${shippingData.phone}`
         };
 
@@ -168,7 +161,6 @@ const Checkout = () => {
         });
       }
 
-      // 2. Subscription Products Processing
       if (subscriptionItems.length > 0) {
         for (const sub of subscriptionItems) {
           const numericPlanId = parseInt(sub.id.replace(/[^0-9]/g, '')) || 1;
@@ -182,7 +174,6 @@ const Checkout = () => {
         }
       }
 
-      // Save Address for future
       if (saveAddress) {
         localStorage.setItem('arpancart_saved_address', JSON.stringify(shippingData));
       } else {
@@ -260,12 +251,12 @@ const Checkout = () => {
                   <div className="relative group">
                     <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-widest mb-1.5">Full Name</label>
                     <div className="absolute bottom-3 left-4 pointer-events-none"><UserIcon className="h-5 w-5 text-gray-400 group-focus-within:text-[#f7941d] transition-colors" /></div>
-                    <input type="text" name="fullName" required value={shippingData.fullName} onChange={handleChange} className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-[#f7941d] focus:ring-2 focus:ring-orange-100 bg-gray-50 focus:bg-white transition-all text-sm font-bold text-gray-800" placeholder="e.g. Amit Kumar"/>
+                    <input type="text" name="fullName" required value={shippingData.fullName} onChange={handleChange} className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-[#f7941d] focus:ring-2 focus:ring-orange-100 bg-gray-50 focus:bg-white transition-all text-sm font-bold text-gray-800" />
                   </div>
                   <div className="relative group">
                     <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-widest mb-1.5">Email Address</label>
                     <div className="absolute bottom-3 left-4 pointer-events-none"><Mail className="h-5 w-5 text-gray-400 group-focus-within:text-[#f7941d] transition-colors" /></div>
-                    <input type="email" name="email" required value={shippingData.email} onChange={handleChange} className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-[#f7941d] focus:ring-2 focus:ring-orange-100 bg-gray-50 focus:bg-white transition-all text-sm font-bold text-gray-800" placeholder="your@email.com"/>
+                    <input type="email" name="email" required value={shippingData.email} onChange={handleChange} className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-[#f7941d] focus:ring-2 focus:ring-orange-100 bg-gray-50 focus:bg-white transition-all text-sm font-bold text-gray-800" />
                   </div>
                 </div>
 
@@ -273,12 +264,12 @@ const Checkout = () => {
                   <div className="relative group">
                     <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-widest mb-1.5">Phone Number</label>
                     <div className="absolute bottom-3 left-4 pointer-events-none"><Phone className="h-5 w-5 text-gray-400 group-focus-within:text-[#f7941d] transition-colors" /></div>
-                    <input type="tel" name="phone" required value={shippingData.phone} onChange={handleChange} className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-[#f7941d] focus:ring-2 focus:ring-orange-100 bg-gray-50 focus:bg-white transition-all text-sm font-bold text-gray-800" placeholder="e.g. 9876543210"/>
+                    <input type="tel" name="phone" required value={shippingData.phone} onChange={handleChange} className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-[#f7941d] focus:ring-2 focus:ring-orange-100 bg-gray-50 focus:bg-white transition-all text-sm font-bold text-gray-800" />
                   </div>
                   <div className="relative group">
                     <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-widest mb-1.5">Flat No. / Street Address</label>
                     <div className="absolute bottom-3 left-4 pointer-events-none"><Building className="h-5 w-5 text-gray-400 group-focus-within:text-[#f7941d] transition-colors" /></div>
-                    <input type="text" name="address" required value={shippingData.address} onChange={handleChange} className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-[#f7941d] focus:ring-2 focus:ring-orange-100 bg-gray-50 focus:bg-white transition-all text-sm font-bold text-gray-800" placeholder="House No, Landmark"/>
+                    <input type="text" name="address" required value={shippingData.address} onChange={handleChange} className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-[#f7941d] focus:ring-2 focus:ring-orange-100 bg-gray-50 focus:bg-white transition-all text-sm font-bold text-gray-800" />
                   </div>
                 </div>
 
@@ -286,17 +277,17 @@ const Checkout = () => {
                   <div className="relative group">
                     <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-widest mb-1.5">PIN Code (Patna)</label>
                     <div className="absolute bottom-3 left-4 pointer-events-none"><Hash className="h-5 w-5 text-gray-400 group-focus-within:text-[#f7941d] transition-colors" /></div>
-                    <input type="text" name="zipCode" maxLength="6" required value={shippingData.zipCode} onChange={handlePinChange} className={`w-full pl-12 pr-10 py-3 border rounded-xl outline-none transition-all text-sm font-bold ${pinError ? 'border-red-500 ring-2 ring-red-100 bg-red-50 text-red-700' : shippingData.zipCode.length === 6 ? 'border-green-400 ring-2 ring-green-100 bg-green-50 text-green-800' : 'border-gray-200 focus:border-[#f7941d] bg-gray-50 focus:bg-white text-gray-800'}`} placeholder="800001"/>
+                    <input type="text" name="zipCode" maxLength="6" required value={shippingData.zipCode} onChange={handlePinChange} className={`w-full pl-12 pr-10 py-3 border rounded-xl outline-none transition-all text-sm font-bold ${pinError ? 'border-red-500 ring-2 ring-red-100 bg-red-50 text-red-700' : shippingData.zipCode.length === 6 ? 'border-green-400 ring-2 ring-green-100 bg-green-50 text-green-800' : 'border-gray-200 focus:border-[#f7941d] bg-gray-50 focus:bg-white text-gray-800'}`} />
                     {pinLoading && <div className="absolute bottom-3 right-4 pointer-events-none"><Loader2 className="h-5 w-5 text-[#f7941d] animate-spin" /></div>}
                     {pinError && <p className="text-red-500 text-[11px] mt-1.5 font-extrabold absolute -bottom-5 left-0 w-[200%]">{pinError}</p>}
                   </div>
                   <div>
                     <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-widest mb-1.5">City</label>
-                    <input type="text" name="city" required readOnly value={shippingData.city} className={`w-full px-4 py-3 border rounded-xl outline-none transition-all text-sm font-bold ${shippingData.city ? 'bg-gray-100 border-gray-200 text-gray-600 cursor-not-allowed' : 'bg-gray-50 border-gray-200 cursor-not-allowed text-gray-400'}`} placeholder="Auto-detected" />
+                    <input type="text" name="city" required readOnly value={shippingData.city} className={`w-full px-4 py-3 border rounded-xl outline-none transition-all text-sm font-bold ${shippingData.city ? 'bg-gray-100 border-gray-200 text-gray-600 cursor-not-allowed' : 'bg-gray-50 border-gray-200 cursor-not-allowed text-gray-400'}`} />
                   </div>
                   <div>
                     <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-widest mb-1.5">State</label>
-                    <input type="text" name="state" required readOnly value={shippingData.state} className={`w-full px-4 py-3 border rounded-xl outline-none transition-all text-sm font-bold ${shippingData.state ? 'bg-gray-100 border-gray-200 text-gray-600 cursor-not-allowed' : 'bg-gray-50 border-gray-200 cursor-not-allowed text-gray-400'}`} placeholder="Auto-detected" />
+                    <input type="text" name="state" required readOnly value={shippingData.state} className={`w-full px-4 py-3 border rounded-xl outline-none transition-all text-sm font-bold ${shippingData.state ? 'bg-gray-100 border-gray-200 text-gray-600 cursor-not-allowed' : 'bg-gray-50 border-gray-200 cursor-not-allowed text-gray-400'}`} />
                   </div>
                 </div>
 
@@ -335,7 +326,7 @@ const Checkout = () => {
                 {!appliedCoupon ? (
                   <div>
                     <div className="flex gap-2">
-                      <input type="text" value={couponInput} onChange={(e) => setCouponInput(e.target.value.toUpperCase())} placeholder="e.g. DIWALI50" className="w-full border-2 border-gray-200 rounded-lg px-4 py-3 text-sm outline-none focus:border-[#f7941d] focus:bg-orange-50/30 uppercase font-black tracking-widest transition-colors" />
+                      <input type="text" value={couponInput} onChange={(e) => setCouponInput(e.target.value.toUpperCase())} className="w-full border-2 border-gray-200 rounded-lg px-4 py-3 text-sm outline-none focus:border-[#f7941d] focus:bg-orange-50/30 uppercase font-black tracking-widest transition-colors" />
                       <button onClick={handleApplyCoupon} disabled={isApplying || !couponInput} className="bg-gray-900 hover:bg-black text-white px-6 py-3 rounded-lg text-xs font-extrabold uppercase tracking-wider transition-all disabled:opacity-50 shadow-md">
                         {isApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
                       </button>
