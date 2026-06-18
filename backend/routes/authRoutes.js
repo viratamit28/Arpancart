@@ -5,13 +5,12 @@ const prisma = require('../config/db');
 const router = express.Router();
 
 // ==========================================
-// 1. REGISTER ROUTE (Updated with mobileNumber)
+// 1. REGISTER ROUTE
 // ==========================================
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password, mobileNumber } = req.body;
 
-    // 🔥 FIX: Strict Validation
     if (!name || !email || !password || !mobileNumber) {
       return res.status(400).json({ success: false, message: "All fields are required." });
     }
@@ -20,7 +19,6 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ success: false, message: "Please provide a valid 10-digit mobile number." });
     }
 
-    // 🔥 FIX: Check if user already exists (Email OR mobileNumber)
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [
@@ -30,7 +28,6 @@ router.post('/register', async (req, res) => {
       }
     });
 
-    // Exact error message based on duplicate type
     if (existingUser) {
       if (existingUser.email === email) {
         return res.status(400).json({ success: false, message: "Email is already registered. Please login." });
@@ -43,29 +40,15 @@ router.post('/register', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     
-    // Create new user with mobileNumber
     const newUser = await prisma.user.create({ 
-      data: { 
-        name, 
-        email, 
-        mobileNumber, 
-        password: hashedPassword 
-      } 
+      data: { name, email, mobileNumber, password: hashedPassword } 
     });
     
-    // Token generation
     const token = jwt.sign({ userId: newUser.id, role: newUser.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
     
     res.status(201).json({ 
-      success: true, 
-      message: "Account created!", 
-      token, 
-      user: { 
-        id: newUser.id, 
-        name: newUser.name, 
-        email: newUser.email,
-        mobileNumber: newUser.mobileNumber // Return newly added mobile number
-      } 
+      success: true, message: "Account created!", token, 
+      user: { id: newUser.id, name: newUser.name, email: newUser.email, mobileNumber: newUser.mobileNumber } 
     });
   } catch (error) {
     console.error("Signup error:", error);
@@ -81,7 +64,6 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     const user = await prisma.user.findUnique({ where: { email } });
     
-    // 🔥 FIX: Password null toh nahi hai pehle check karo
     if (!user || !user.password) {
       return res.status(400).json({ success: false, message: "Invalid credentials" });
     }
@@ -94,16 +76,8 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
     
     res.json({ 
-      success: true, 
-      message: "Login successful!", 
-      token, 
-      user: { 
-        id: user.id, 
-        name: user.name, 
-        email: user.email, 
-        mobileNumber: user.mobileNumber, // Return mobile number
-        role: user.role 
-      } 
+      success: true, message: "Login successful!", token, 
+      user: { id: user.id, name: user.name, email: user.email, mobileNumber: user.mobileNumber, role: user.role } 
     });
   } catch (error) {
     res.status(500).json({ success: false, message: "Login error", error: error.message });
@@ -118,7 +92,6 @@ router.post('/admin-login', async (req, res) => {
     const { email, password } = req.body;
     const user = await prisma.user.findUnique({ where: { email } });
     
-    // 🔥 FIX: Check user, role, aur password ki existence crash se bachne ke liye
     if (!user || user.role !== 'admin' || !user.password) {
       return res.status(403).json({ success: false, message: "Access Denied / Invalid credentials" });
     }
@@ -131,16 +104,8 @@ router.post('/admin-login', async (req, res) => {
     const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
     
     res.json({ 
-      success: true, 
-      message: "Admin Login successful! 👑", 
-      token, 
-      user: { 
-        id: user.id, 
-        name: user.name, 
-        email: user.email, 
-        mobileNumber: user.mobileNumber,
-        role: user.role 
-      } 
+      success: true, message: "Admin Login successful! 👑", token, 
+      user: { id: user.id, name: user.name, email: user.email, mobileNumber: user.mobileNumber, role: user.role } 
     });
   } catch (error) {
     res.status(500).json({ success: false, message: "Login error", error: error.message });
@@ -148,26 +113,78 @@ router.post('/admin-login', async (req, res) => {
 });
 
 // ==========================================
-// 4. FORGOT PASSWORD ROUTE (NEW)
+// 🔥 4. FORGOT PASSWORD (GENERATE OTP)
 // ==========================================
 router.post('/forgot-password', async (req, res) => {
   try {
-    const { email } = req.body;
-    const user = await prisma.user.findUnique({ where: { email } });
+    const { mobileNumber } = req.body;
+    
+    const user = await prisma.user.findFirst({ where: { mobileNumber } });
     
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found with this email address." });
+      return res.status(404).json({ success: false, message: "No account found with this mobile number." });
     }
 
-    // 💡 Future Note: Yahan tu actual me Nodemailer/SendGrid ka code lagayega email bhejne ke liye. 
-    // Abhi ke liye hum success bhej rahe hain taaki frontend properly handle kar le.
-    res.json({ 
+    // Generate 4-digit OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // Expiry 15 mins
+
+    // Save OTP to DB
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { otp, otpExpiry }
+    });
+
+    res.status(200).json({ 
       success: true, 
-      message: "Password reset link sent to your email successfully!" 
+      message: "OTP sent successfully!",
+      demoOtp: otp // Sending to frontend for demo purposes
     });
   } catch (error) {
     console.error("Forgot Password Error:", error);
     res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
+});
+
+// ==========================================
+// 🔥 5. RESET PASSWORD (VERIFY OTP & UPDATE)
+// ==========================================
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { mobileNumber, otp, newPassword } = req.body;
+
+    const user = await prisma.user.findFirst({ where: { mobileNumber } });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    if (user.otp !== otp) {
+      return res.status(400).json({ success: false, message: "Invalid OTP entered." });
+    }
+
+    if (new Date() > new Date(user.otpExpiry)) {
+      return res.status(400).json({ success: false, message: "OTP has expired. Please try again." });
+    }
+
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password and clear OTP
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { 
+        password: hashedPassword,
+        otp: null,
+        otpExpiry: null
+      }
+    });
+
+    res.status(200).json({ success: true, message: "Password reset successful! You can now log in." });
+  } catch (error) {
+    console.error("Reset Password Error:", error);
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 });
 

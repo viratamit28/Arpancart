@@ -1,16 +1,23 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Mail, Lock, User as UserIcon, ArrowRight, Phone, KeyRound, ArrowLeft } from 'lucide-react'; 
+import { Mail, Lock, User as UserIcon, ArrowRight, Phone, KeyRound, ArrowLeft, KeySquare } from 'lucide-react'; 
 import poojaImage from '../assets/2.jpg';
 
 const Auth = () => {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
-  const [isForgotPassword, setIsForgotPassword] = useState(false); // 🔥 NEW: Forgot Password State
+  
+  // 🔥 FORGOT PASSWORD STATES
+  const [isForgotPassword, setIsForgotPassword] = useState(false); 
+  const [forgotStep, setForgotStep] = useState(1); // Step 1: Mobile, Step 2: OTP & New Password
+  const [resetMobile, setResetMobile] = useState('');
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [successMsg, setSuccessMsg] = useState(null); // Success messages ke liye
+  const [successMsg, setSuccessMsg] = useState(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -19,23 +26,19 @@ const Auth = () => {
     mobileNumber: ''
   });
 
-  const [resetEmail, setResetEmail] = useState(''); // Forgot password email state
-
   const API_BASE_URL = 'https://arpancart-production.up.railway.app/api';
 
   // ==========================================
-  // 🛡️ STRICT INPUT VALIDATION (Point #7)
+  // 🛡️ STRICT INPUT VALIDATION
   // ==========================================
   const handleChange = (e) => {
     const { name, value } = e.target;
     
     if (name === 'mobileNumber') {
-      // Allow only numbers, max 10
       const numericValue = value.replace(/\D/g, ''); 
       if (numericValue.length <= 10) setFormData({ ...formData, [name]: numericValue });
     } 
     else if (name === 'name') {
-      // Allow only alphabets and spaces (No special characters or numbers)
       const alphabeticValue = value.replace(/[^a-zA-Z\s]/g, '');
       setFormData({ ...formData, [name]: alphabeticValue });
     } 
@@ -55,7 +58,6 @@ const Auth = () => {
     setError(null);
     setSuccessMsg(null);
     
-    // 🔥 FRONTEND VALIDATIONS
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       setError("Please enter a valid email address.");
@@ -95,8 +97,6 @@ const Auth = () => {
       }
     } catch (err) {
       console.error("Auth Error:", err);
-      // 🔥 POINT #6: DUPLICATE ERROR HANDLING
-      // Agar backend "Number already registered" bhejta hai, toh wo directly yahan show hoga
       setError(err.response?.data?.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
@@ -104,36 +104,77 @@ const Auth = () => {
   };
 
   // ==========================================
-  // 🔑 FORGOT PASSWORD SUBMIT LOGIC
+  // 🔑 FORGOT PASSWORD (STEP 1: SEND OTP)
   // ==========================================
-  const handleForgotPasswordSubmit = async (e) => {
+  const handleSendOtp = async (e) => {
     e.preventDefault();
     setError(null);
     setSuccessMsg(null);
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(resetEmail)) {
-      setError("Please enter a valid registered email address.");
+    if (resetMobile.length !== 10) {
+      setError("Please enter a valid 10-digit registered mobile number.");
       return;
     }
 
     setLoading(true);
     try {
-      // 💡 Tera backend endpoint for forgot password yahan daalna hai
-      const response = await axios.post(`${API_BASE_URL}/auth/forgot-password`, { email: resetEmail });
-      setSuccessMsg(response.data.message || "Password reset link has been sent to your email!");
-      setResetEmail('');
+      const response = await axios.post(`${API_BASE_URL}/auth/forgot-password`, { mobileNumber: resetMobile });
+      setSuccessMsg(`OTP sent successfully! (Demo OTP: ${response.data.demoOtp})`); // Remove demoOtp in production
+      setForgotStep(2); // Move to Step 2
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to send reset link. Please check your email.");
+      setError(err.response?.data?.message || "Failed to send OTP. Please check the number.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ==========================================
+  // 🔒 RESET PASSWORD (STEP 2: VERIFY OTP & RESET)
+  // ==========================================
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setSuccessMsg(null);
+
+    if (otp.length !== 4) {
+      setError("Please enter a valid 4-digit OTP.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setError("New password must be at least 6 characters long.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post(`${API_BASE_URL}/auth/reset-password`, { 
+        mobileNumber: resetMobile, 
+        otp, 
+        newPassword 
+      });
+      
+      setSuccessMsg(response.data.message || "Password reset successful! You can now log in.");
+      
+      // Reset view to Login after 2 seconds
+      setTimeout(() => {
+        toggleAuthMode(true);
+      }, 2000);
+
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to reset password. OTP might be invalid or expired.");
     } finally {
       setLoading(false);
     }
   };
 
   // Toggles
-  const toggleAuthMode = () => {
-    setIsLogin(!isLogin);
+  const toggleAuthMode = (forceLogin = false) => {
+    setIsLogin(forceLogin === true ? true : !isLogin);
     setIsForgotPassword(false);
+    setForgotStep(1);
+    setResetMobile('');
+    setOtp('');
+    setNewPassword('');
     setError(null);
     setSuccessMsg(null);
     setFormData({ name: '', email: '', password: '', mobileNumber: '' });
@@ -141,6 +182,10 @@ const Auth = () => {
 
   const toggleForgotPassword = () => {
     setIsForgotPassword(!isForgotPassword);
+    setForgotStep(1);
+    setResetMobile('');
+    setOtp('');
+    setNewPassword('');
     setError(null);
     setSuccessMsg(null);
   };
@@ -175,7 +220,7 @@ const Auth = () => {
             </h2>
             <p className="text-gray-500 mt-2 font-medium">
               {isForgotPassword 
-                ? 'Enter your email to receive a password reset link.'
+                ? (forgotStep === 1 ? 'Enter your mobile number to receive an OTP.' : 'Enter OTP and your new password.')
                 : (isLogin ? 'Login to access your orders and subscriptions.' : 'Sign up to get started with your spiritual journey.')}
             </p>
           </div>
@@ -196,27 +241,73 @@ const Auth = () => {
               FORGOT PASSWORD VIEW
           ========================================= */}
           {isForgotPassword ? (
-            <form onSubmit={handleForgotPasswordSubmit} className="space-y-5">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+            <form onSubmit={forgotStep === 1 ? handleSendOtp : handleResetPassword} className="space-y-5">
+              
+              {forgotStep === 1 && (
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Phone className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <div className="absolute inset-y-0 left-10 flex items-center pointer-events-none">
+                    <span className="text-gray-500 font-medium border-r border-gray-300 pr-2">+91</span>
+                  </div>
+                  <input
+                    type="tel"
+                    placeholder="10-digit Mobile Number"
+                    required
+                    value={resetMobile}
+                    onChange={(e) => { 
+                      const val = e.target.value.replace(/\D/g, '');
+                      if(val.length <= 10) setResetMobile(val); 
+                      setError(null); 
+                    }}
+                    className="w-full pl-[5.5rem] pr-4 py-3 border border-gray-200 rounded-md outline-none focus:border-[#f7941d] focus:ring-1 focus:ring-[#f7941d] transition-all bg-gray-50 focus:bg-white text-gray-700 tracking-wider"
+                  />
                 </div>
-                <input
-                  type="email"
-                  placeholder="Registered Email Address"
-                  required
-                  value={resetEmail}
-                  onChange={(e) => { setResetEmail(e.target.value); setError(null); }}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-md outline-none focus:border-[#f7941d] focus:ring-1 focus:ring-[#f7941d] transition-all bg-gray-50 focus:bg-white text-gray-700"
-                />
-              </div>
+              )}
+
+              {forgotStep === 2 && (
+                <>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <KeySquare className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Enter 4-digit OTP"
+                      required
+                      value={otp}
+                      onChange={(e) => { 
+                        const val = e.target.value.replace(/\D/g, '');
+                        if(val.length <= 4) setOtp(val); 
+                        setError(null); 
+                      }}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-md outline-none focus:border-[#f7941d] focus:ring-1 focus:ring-[#f7941d] transition-all bg-gray-50 focus:bg-white text-gray-700 tracking-[0.2em] font-bold"
+                    />
+                  </div>
+
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="password"
+                      placeholder="Enter New Password"
+                      required
+                      value={newPassword}
+                      onChange={(e) => { setNewPassword(e.target.value); setError(null); }}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-md outline-none focus:border-[#f7941d] focus:ring-1 focus:ring-[#f7941d] transition-all bg-gray-50 focus:bg-white text-gray-700"
+                    />
+                  </div>
+                </>
+              )}
 
               <button
                 type="submit"
                 disabled={loading}
                 className="w-full flex items-center justify-center gap-2 bg-[#f7941d] hover:bg-[#e0861a] text-white font-bold text-lg py-3.5 rounded-md shadow-md transition-all duration-300 active:scale-95 disabled:opacity-70"
               >
-                {loading ? 'Sending...' : 'Send Reset Link'}
+                {loading ? 'Processing...' : (forgotStep === 1 ? 'Get OTP' : 'Reset Password')}
                 {!loading && <KeyRound className="w-5 h-5" />}
               </button>
 
@@ -305,7 +396,6 @@ const Auth = () => {
                 />
               </div>
 
-              {/* 🔥 NEW: Forgot Password Link */}
               {isLogin && (
                 <div className="flex justify-end mt-1">
                   <button 
@@ -329,7 +419,6 @@ const Auth = () => {
             </form>
           )}
 
-          {/* Toggle Login/Signup (Only show if not in forgot password mode) */}
           {!isForgotPassword && (
             <div className="mt-8 text-center border-t border-gray-100 pt-6">
               <p className="text-gray-600 font-medium">

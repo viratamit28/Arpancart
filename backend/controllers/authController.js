@@ -25,7 +25,7 @@ exports.register = async (req, res) => {
       where: {
         OR: [
           { email: email },
-          { mobileNumber: mobileNumber } // 🔥 FIX: DB ka naya column 'mobileNumber' use kiya hai
+          { mobileNumber: mobileNumber } 
         ]
       }
     });
@@ -35,7 +35,7 @@ exports.register = async (req, res) => {
       if (existingUser.email === email) {
         return res.status(400).json({ success: false, message: "Email is already registered. Please login." });
       }
-      if (existingUser.mobileNumber === mobileNumber) { // 🔥 FIX
+      if (existingUser.mobileNumber === mobileNumber) { 
         return res.status(400).json({ success: false, message: "Mobile number is already registered. Please login." });
       }
     }
@@ -49,7 +49,7 @@ exports.register = async (req, res) => {
       data: {
         name: name,
         email: email,
-        mobileNumber: mobileNumber, // 🔥 FIX: Updated column name
+        mobileNumber: mobileNumber, 
         password: hashedPassword,
         role: "customer"
       }
@@ -71,7 +71,7 @@ exports.register = async (req, res) => {
         id: newUser.id,
         name: newUser.name,
         email: newUser.email,
-        mobileNumber: newUser.mobileNumber // 🔥 FIX
+        mobileNumber: newUser.mobileNumber 
       }
     });
 
@@ -121,26 +121,79 @@ exports.login = async (req, res) => {
 };
 
 // ==========================================
-// 3. FORGOT PASSWORD CONTROLLER
+// 🔥 3. FORGOT PASSWORD (SEND DEMO OTP)
 // ==========================================
 exports.forgotPassword = async (req, res) => {
-  const { email } = req.body;
+  const { mobileNumber } = req.body;
 
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
+    // Check if mobile number exists
+    const user = await prisma.user.findFirst({ where: { mobileNumber } });
     
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found with this email address." });
+      return res.status(404).json({ success: false, message: "No account found with this mobile number." });
     }
 
-    // Yahan aage tu Nodemailer se email bhej sakta hai
-    // Abhi frontend ko pass karne ke liye success message bhej rahe hain
+    // Generate 4-digit Demo OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins expiry
+
+    // Save OTP to DB
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { otp, otpExpiry }
+    });
+
+    // Send OTP directly in the response so we can alert it on frontend
     res.status(200).json({ 
       success: true, 
-      message: "Password reset link sent to your email successfully!" 
+      message: "OTP generated successfully!",
+      demoOtp: otp 
     });
   } catch (error) {
     console.error("Forgot Password Error:", error);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+// ==========================================
+// 🔥 4. VERIFY OTP & RESET PASSWORD
+// ==========================================
+exports.resetPassword = async (req, res) => {
+  const { mobileNumber, otp, newPassword } = req.body;
+
+  try {
+    const user = await prisma.user.findFirst({ where: { mobileNumber } });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    if (user.otp !== otp) {
+      return res.status(400).json({ success: false, message: "Invalid OTP entered." });
+    }
+
+    if (new Date() > new Date(user.otpExpiry)) {
+      return res.status(400).json({ success: false, message: "OTP has expired. Please request a new one." });
+    }
+
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password and clear OTP fields
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { 
+        password: hashedPassword,
+        otp: null,
+        otpExpiry: null
+      }
+    });
+
+    res.status(200).json({ success: true, message: "Password reset successful! You can now log in." });
+  } catch (error) {
+    console.error("Reset Password Error:", error);
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
