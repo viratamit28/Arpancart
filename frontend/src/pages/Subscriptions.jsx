@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Check, ArrowRight, MapPin, Sparkles, CheckCircle2, MessageCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom'; // 🚨 NAYA IMPORT
+import { Check, ArrowRight, MapPin, Sparkles, CheckCircle2, MessageCircle, Loader2 } from 'lucide-react'; // Loader2 ADD KIYA
 
 const Subscriptions = () => {
+  const navigate = useNavigate(); // 🚨 ROUTING KE LIYE
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false); // 🚨 BUTTON LOADING STATE
   const [error, setError] = useState(null);
   
   // WhatsApp number fallback
@@ -84,7 +87,8 @@ const Subscriptions = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  // 🔥 YAHAN MAINE POORA NAYA LOGIC ADD KIYA HAI 🔥
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError(''); 
 
@@ -98,9 +102,70 @@ const Subscriptions = () => {
       setFormError("Sorry, we currently deliver subscriptions only in Patna (Pincodes starting with 800 or 801).");
       return;
     }
-    
-    console.log("Subscription Order Placed:", formData);
-    alert("Thank you! Your subscription request has been received. Our team will contact you shortly.");
+
+    // Authentication Check
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setFormError("Please login to subscribe to a plan.");
+      setTimeout(() => navigate('/login'), 2000);
+      return;
+    }
+
+    let userId = null;
+    try {
+      const payloadBase64 = token.split('.')[1];
+      const decodedPayload = JSON.parse(atob(payloadBase64));
+      userId = decodedPayload.id || decodedPayload.userId;
+    } catch (err) {
+      console.error("Token decoding failed", err);
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // 1. Sabse pehle Address Save karo DB mein taaki Delivery Location mil sake
+      await axios.post(`${API_BASE_URL}/addresses`, {
+        fullName: formData.fullName,
+        phone: formData.phone,
+        street: `${formData.address}, Landmark: ${formData.landmark}`,
+        city: 'Patna',
+        state: 'Bihar',
+        pincode: formData.pincode,
+        isDefault: true
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Plan ki duration nikal rahe hain
+      const selectedPlan = plans.find(p => p.id === parseInt(formData.packageId));
+      const durationDays = selectedPlan ? selectedPlan.durationDays : 30;
+
+      // Start date hamesha agla din (Tomorrow) hoga
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      // 2. Ab Subscription create API ko data bhejo
+      await axios.post(`${API_BASE_URL}/subscriptions/create`, {
+        userId: parseInt(userId),
+        planId: parseInt(formData.packageId),
+        startDate: tomorrow.toISOString(),
+        durationDays: durationDays,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      alert("🎉 Thank you! Your subscription has been activated successfully! Delivery starts from tomorrow.");
+      
+      // Form ko empty kar do aur user ko unke dashboard bhej do
+      setFormData({ fullName: '', phone: '', address: '', landmark: '', pincode: '', packageId: '', days: [] });
+      navigate('/dashboard'); 
+
+    } catch (error) {
+      console.error("Subscription Error:", error);
+      setFormError(error.response?.data?.message || "Failed to process subscription. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -144,7 +209,6 @@ const Subscriptions = () => {
               
               {/* 🔥 DYNAMIC PLANS MAPPING */}
               {plans.map((plan, index) => {
-                // Keep the exact same alternating color theme you had
                 const isGreenTheme = index % 2 === 0;
 
                 return (
@@ -157,7 +221,6 @@ const Subscriptions = () => {
                         : (isGreenTheme ? 'border-green-500 hover:shadow-xl hover:-translate-y-1' : 'border-[#f59e0b] hover:shadow-xl hover:-translate-y-1')
                     }`}
                   >
-                    {/* Only show 'Recommended' for the 2nd item like before */}
                     {index === 1 && (
                       <div className="absolute top-0 w-full bg-[#c21820] text-white text-center py-1.5 text-xs font-bold tracking-widest uppercase z-10">
                         Recommended
@@ -178,7 +241,6 @@ const Subscriptions = () => {
                       <h4 className={`text-xl font-serif font-bold ${isGreenTheme ? 'text-[#14532d]' : 'text-[#78350f]'} leading-tight px-2`}>{plan.name}</h4>
                     </div>
 
-                    {/* 🔥 DYNAMIC DESCRIPTION BULLET POINTS */}
                     <div className={`p-6 flex-grow ${isGreenTheme ? 'bg-[#dcfce7]' : 'bg-[#fde68a]'}`}>
                       <ul className="space-y-3">
                         {plan.description ? (
@@ -207,7 +269,7 @@ const Subscriptions = () => {
                 );
               })}
 
-              {/* Box 3: Customized (Dark Red) - ALWAYS SHOWS AT THE END */}
+              {/* Box 3: Customized (Dark Red) */}
               <div className="flex flex-col border border-[#7f1d1d] rounded-xl overflow-hidden bg-[#7f1d1d] shadow-lg relative hover:shadow-xl transition-all duration-300">
                 <div className="p-8 text-center flex flex-col items-center justify-center h-full">
                   <Sparkles className="w-8 h-8 text-[#f7941d] mb-4 opacity-80" />
@@ -246,7 +308,6 @@ const Subscriptions = () => {
 
           <form onSubmit={handleSubmit} className="space-y-8">
             
-            {/* Personal Details Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-x-12 md:gap-y-8">
               <div className="space-y-1.5">
                 <label className="text-[14px] font-bold text-[#666666] block">Full Name <span className="text-red-500">*</span></label>
@@ -324,13 +385,14 @@ const Subscriptions = () => {
             <div className="pt-8">
               <button 
                 type="submit" 
-                className={`w-full md:w-auto px-10 py-3.5 rounded-md font-bold tracking-wide transition-all text-[15px] ${
-                  formData.packageId 
+                disabled={isSubmitting}
+                className={`w-full flex items-center justify-center gap-2 md:w-auto px-10 py-3.5 rounded-md font-bold tracking-wide transition-all text-[15px] ${
+                  formData.packageId && !isSubmitting
                     ? 'bg-[#8b1818] text-white hover:bg-[#6b1212] shadow-sm' 
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                Submit Request
+                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Submit Request'}
               </button>
             </div>
           </form>

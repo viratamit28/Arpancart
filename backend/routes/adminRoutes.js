@@ -34,14 +34,18 @@ router.get('/users', verifyToken, isAdmin, async (req, res) => {
 });
 
 // ==========================================
-// 📦 ORDERS MANAGEMENT
+// 📦 ORDERS MANAGEMENT (🔥 PRODUCT TITLE FIX APPLIED YAHAN 🔥)
 // ==========================================
 router.get('/orders', verifyToken, isAdmin, async (req, res) => {
   try {
     const orders = await prisma.order.findMany({
       include: { 
         user: true,   // Customer ka naam/email lane ke liye
-        items: true   // Order ke items lane ke liye
+        items: {
+          include: {
+            product: true // 🔥 YAHAN FIX HAI: Items ke andar ghuskar Product ki detail aayegi!
+          }
+        } 
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -120,7 +124,7 @@ router.post('/subcategories', verifyToken, isAdmin, async (req, res) => {
   }
 });
 
-// 4. Delete a Category (🔥 NAYA CODE YAHAN ADD HUA HAI 🔥)
+// 4. Delete a Category
 router.delete('/categories/:id', verifyToken, isAdmin, async (req, res) => {
   try {
     const categoryId = parseInt(req.params.id);
