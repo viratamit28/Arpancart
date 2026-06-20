@@ -111,8 +111,8 @@ const Checkout = () => {
     }
   };
 
-  // =========================================
-  // 🚀 PLACE ORDER LOGIC (SPLIT CART)
+// =========================================
+  // 🚀 PLACE ORDER LOGIC (SPLIT CART + ADDRESS SAVE)
   // =========================================
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
@@ -142,9 +142,24 @@ const Checkout = () => {
     }
 
     try {
+      // ✅ STEP 1: Sabse pehle Address ko Database ki Address Table me save karo
+      await axios.post(`${API_BASE_URL}/addresses`, {
+        fullName: shippingData.fullName,
+        phone: shippingData.phone,
+        street: shippingData.address,
+        city: shippingData.city,
+        state: shippingData.state,
+        pincode: shippingData.zipCode,
+        isDefault: saveAddress // Agar checkbox tick hai, toh default set hoga
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // ✅ STEP 2: Ab items ko alag karo (Subscription vs Regular)
       const subscriptionItems = cartItems.filter(item => item.isSubscription);
       const regularItems = cartItems.filter(item => !item.isSubscription);
 
+      // ✅ STEP 3: Regular items ka Order place karo
       if (regularItems.length > 0) {
         const orderPayload = {
           items: regularItems.map(item => ({ 
@@ -153,6 +168,7 @@ const Checkout = () => {
             price: parseFloat(item.price) 
           })),
           totalAmount: parseFloat(finalTotalAmount), 
+          // Yeh string format bill/invoice history ke liye Order table me jayega
           shippingAddress: `${shippingData.fullName}, ${shippingData.address}, ${shippingData.city}, ${shippingData.state} - ${shippingData.zipCode}. Phone: ${shippingData.phone}`
         };
 
@@ -161,6 +177,7 @@ const Checkout = () => {
         });
       }
 
+      // ✅ STEP 4: Subscription items ka logic run karo
       if (subscriptionItems.length > 0) {
         for (const sub of subscriptionItems) {
           const numericPlanId = parseInt(sub.id.replace(/[^0-9]/g, '')) || 1;
@@ -170,17 +187,21 @@ const Checkout = () => {
             planId: numericPlanId,
             startDate: sub.startDate,
             durationDays: parseInt(sub.durationDays)
+          }, {
+            // Token yahan bhi bhej dena safe rehta hai
+            headers: { Authorization: `Bearer ${token}` }
           });
         }
       }
 
+      // Local storage address state maintain
       if (saveAddress) {
         localStorage.setItem('arpancart_saved_address', JSON.stringify(shippingData));
       } else {
         localStorage.removeItem('arpancart_saved_address');
       }
 
-      alert("🎉 Order Placed Successfully! Jai Shree Ram!");
+      alert("🎉 Order Placed Successfully!");
       if (setCartItems) setCartItems([]);
       navigate('/dashboard'); 
 
