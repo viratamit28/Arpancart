@@ -17,7 +17,7 @@ const AdminDashboard = () => {
   const [products, setProducts] = useState([]); 
   const [customers, setCustomers] = useState([]); 
   
-  // DYNAMIC PLAN STATES (🔥 Updated to include description)
+  // DYNAMIC PLAN STATES
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
   const [planForm, setPlanForm] = useState({ name: '', price: '', durationDays: '', description: '' });
 
@@ -181,7 +181,7 @@ const AdminDashboard = () => {
       const res = await axios.post(`${API_BASE_URL}/subscriptions/admin/plans`, planForm, config);
       if (res.data.success) {
         setSubscriptionPlans([...subscriptionPlans, res.data.data]);
-        setPlanForm({ name: '', price: '', durationDays: '', description: '' }); // Reset
+        setPlanForm({ name: '', price: '', durationDays: '', description: '' }); 
         alert("Subscription Plan Added Successfully! 🌸");
       }
     } catch (error) {
@@ -467,7 +467,13 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
-      
+      <style>
+        {`
+          .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+          .custom-scrollbar::-webkit-scrollbar-track { background: #fffbf4; }
+          .custom-scrollbar::-webkit-scrollbar-thumb { background: #f7941d; border-radius: 4px; }
+        `}
+      </style>
       {/* SIDEBAR */}
       <aside className="w-full md:w-64 bg-[#8b1818] text-white flex flex-col">
         <div className="p-6 border-b border-white/10 text-center md:text-left">
@@ -523,12 +529,19 @@ const AdminDashboard = () => {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-gray-50 text-[11px] font-extrabold text-gray-500 uppercase tracking-widest border-b border-gray-200">
-                      <th className="p-4 whitespace-nowrap">Order ID</th><th className="p-4">Customer</th><th className="p-4">Date</th><th className="p-4">Amount</th><th className="p-4">Status Update</th>
+                      <th className="p-4 whitespace-nowrap">Order ID</th>
+                      <th className="p-4">Customer</th>
+                      <th className="p-4">Delivery Address</th>
+                      {/* 🔥 NEW COLUMN ADDED HERE */}
+                      <th className="p-4">Items Ordered</th>
+                      <th className="p-4">Date</th>
+                      <th className="p-4">Amount</th>
+                      <th className="p-4">Status Update</th>
                     </tr>
                   </thead>
                   <tbody className="text-sm">
                     {orders.length === 0 ? (
-                      <tr><td colSpan="5" className="p-8 text-center text-gray-500 font-bold">No orders found in database.</td></tr>
+                      <tr><td colSpan="7" className="p-8 text-center text-gray-500 font-bold">No orders found in database.</td></tr>
                     ) : (
                       orders.map((order) => {
                         const customerInfo = order.user || customers.find(c => c.id === order.userId) || {};
@@ -541,8 +554,32 @@ const AdminDashboard = () => {
                             <p className="font-bold text-gray-800">{customerInfo.name || 'Unknown User'}</p>
                             <p className="text-xs text-gray-500 font-medium">{customerInfo.email || 'No Email'}</p>
                           </td>
-                          <td className="p-4 font-medium text-gray-600">{order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
-                          <td className="p-4 font-extrabold text-[#8b1818]">₹{order.totalAmount || 0}</td>
+                          
+                          {/* ADDRESS DATA */}
+                          <td className="p-4">
+                            <p className="text-[11px] text-gray-600 font-bold max-w-[200px] leading-relaxed bg-orange-50/50 p-2 border border-orange-100 rounded-sm">
+                              {order.shippingAddress ? order.shippingAddress : <span className="text-red-400 italic">No Address Provided</span>}
+                            </p>
+                          </td>
+
+                          {/* 🔥 NEW ORDER ITEMS DATA */}
+                          <td className="p-4">
+                            {order.items && order.items.length > 0 ? (
+                              <div className="max-h-24 overflow-y-auto pr-2 custom-scrollbar space-y-1 min-w-[180px]">
+                                {order.items.map((item, idx) => (
+                                  <div key={idx} className="text-[11px] font-bold text-gray-700 bg-gray-100 p-1.5 rounded-sm flex justify-between gap-3">
+                                    <span className="line-clamp-2 leading-tight">{item.product?.title || 'Product Title Missing'}</span>
+                                    <span className="text-[#8b1818] whitespace-nowrap">x {item.quantity}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-[11px] text-gray-400 italic">No Items Data</span>
+                            )}
+                          </td>
+
+                          <td className="p-4 font-medium text-gray-600 whitespace-nowrap">{order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
+                          <td className="p-4 font-extrabold text-[#8b1818] whitespace-nowrap">₹{order.totalAmount || 0}</td>
                           <td className="p-4">
                             <select 
                               value={currentStatus} 
@@ -585,7 +622,6 @@ const AdminDashboard = () => {
                     <input required type="text" value={planForm.name} onChange={e => setPlanForm({...planForm, name: e.target.value})} className="w-full border p-2.5 rounded-sm text-sm outline-none" placeholder="e.g. 30 Days Marigold Box" />
                   </div>
                   
-                  {/* 🔥 NAYA DESCRIPTION FIELD YAHAN ADD KIYA HAI */}
                   <div>
                     <label className="block text-xs font-extrabold text-gray-500 uppercase tracking-widest mb-1">Description / Details</label>
                     <textarea required value={planForm.description} onChange={e => setPlanForm({...planForm, description: e.target.value})} className="w-full border p-2.5 rounded-sm text-sm outline-none" placeholder="e.g. Marigold 6 pcs, Assorted Flowers, Durba" rows="3" />
@@ -617,7 +653,6 @@ const AdminDashboard = () => {
                       <div>
                         <h4 className="font-extrabold text-[#8b1818]">{plan.name}</h4>
                         <p className="text-xs font-bold text-gray-600">₹{plan.price} for {plan.durationDays} Days</p>
-                        {/* 🔥 Description display in the list */}
                         {plan.description && <p className="text-[11px] text-gray-500 mt-2 leading-tight">{plan.description}</p>}
                       </div>
                       <button onClick={() => handleDeletePlan(plan.id)} className="text-red-500 hover:bg-red-100 p-2 rounded-full transition-colors"><Trash2 className="w-4 h-4"/></button>
