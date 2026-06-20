@@ -19,7 +19,7 @@ router.get('/stats', verifyToken, isAdmin, async (req, res) => {
 });
 
 // ==========================================
-// 🧑‍🤝‍🧑 USERS MANAGEMENT (🚨 MISSING THA, AB ADD KIYA)
+// 🧑‍🤝‍🧑 USERS MANAGEMENT
 // ==========================================
 router.get('/users', verifyToken, isAdmin, async (req, res) => {
   try {
@@ -34,7 +34,7 @@ router.get('/users', verifyToken, isAdmin, async (req, res) => {
 });
 
 // ==========================================
-// 📦 ORDERS MANAGEMENT (🚨 MISSING THA, AB ADD KIYA)
+// 📦 ORDERS MANAGEMENT
 // ==========================================
 router.get('/orders', verifyToken, isAdmin, async (req, res) => {
   try {
@@ -69,7 +69,6 @@ router.put('/orders/:id/status', verifyToken, isAdmin, async (req, res) => {
     res.status(500).json({ success: false, message: "Order status update fail ho gaya" });
   }
 });
-
 
 // ==========================================
 // 🗂️ CATEGORY & SUB-CATEGORY MANAGEMENT 
@@ -118,6 +117,41 @@ router.post('/subcategories', verifyToken, isAdmin, async (req, res) => {
     res.status(201).json({ success: true, message: "Sub-Category added successfully!", data: newSubCategory });
   } catch (error) {
     res.status(500).json({ success: false, message: "Sub-Category add error", error: error.message });
+  }
+});
+
+// 4. Delete a Category (🔥 NAYA CODE YAHAN ADD HUA HAI 🔥)
+router.delete('/categories/:id', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const categoryId = parseInt(req.params.id);
+
+    // STEP 1: Check karo ki kya is category me products hain?
+    const relatedProductsCount = await prisma.product.count({ 
+      where: { categoryId: categoryId } 
+    });
+    
+    if (relatedProductsCount > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Cannot delete! Is category mein pehle se products hain. Pehle products hatao." 
+      });
+    }
+
+    // STEP 2: Sub-categories ko pehle delete karo (Foreign Key Error se bachne ke liye)
+    await prisma.subCategory.deleteMany({
+      where: { categoryId: categoryId }
+    });
+
+    // STEP 3: Ab safely main Category delete kar do
+    await prisma.category.delete({
+      where: { id: categoryId }
+    });
+
+    res.status(200).json({ success: true, message: "Category aur uski sub-categories delete ho gayi! 🗑️" });
+    
+  } catch (error) {
+    console.error("🔥 Category Delete Error:", error);
+    res.status(500).json({ success: false, message: "Backend error category delete karne mein." });
   }
 });
 

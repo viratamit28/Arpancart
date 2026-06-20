@@ -243,6 +243,19 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleDeleteCategory = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this category? All its sub-categories will be affected!")) return;
+    try {
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      await axios.delete(`${API_BASE_URL}/admin/categories/${id}`, config);
+      setCategories(categories.filter(c => c.id !== id));
+      alert("Category deleted successfully! 🗑️");
+    } catch (error) { 
+      alert("Failed to delete category. Check backend API."); 
+    }
+  };
+
   // ==========================================
   // 🎟️ COUPON ACTIONS 
   // ==========================================
@@ -532,7 +545,6 @@ const AdminDashboard = () => {
                       <th className="p-4 whitespace-nowrap">Order ID</th>
                       <th className="p-4">Customer</th>
                       <th className="p-4">Delivery Address</th>
-                      {/* 🔥 NEW COLUMN ADDED HERE */}
                       <th className="p-4">Items Ordered</th>
                       <th className="p-4">Date</th>
                       <th className="p-4">Amount</th>
@@ -555,14 +567,12 @@ const AdminDashboard = () => {
                             <p className="text-xs text-gray-500 font-medium">{customerInfo.email || 'No Email'}</p>
                           </td>
                           
-                          {/* ADDRESS DATA */}
                           <td className="p-4">
                             <p className="text-[11px] text-gray-600 font-bold max-w-[200px] leading-relaxed bg-orange-50/50 p-2 border border-orange-100 rounded-sm">
                               {order.shippingAddress ? order.shippingAddress : <span className="text-red-400 italic">No Address Provided</span>}
                             </p>
                           </td>
 
-                          {/* 🔥 NEW ORDER ITEMS DATA */}
                           <td className="p-4">
                             {order.items && order.items.length > 0 ? (
                               <div className="max-h-24 overflow-y-auto pr-2 custom-scrollbar space-y-1 min-w-[180px]">
@@ -745,15 +755,30 @@ const AdminDashboard = () => {
               <h3 className="font-extrabold text-gray-800 uppercase tracking-wide mb-6">Website Categories ({categories.length}/10)</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {categories.length === 0 ? <p className="text-gray-500 text-sm">No categories added yet.</p> : categories.map((cat) => (
-                  <div key={cat.id} className="border border-gray-200 rounded-sm p-4 bg-gray-50/50">
-                    <h4 className="font-extrabold text-[#8b1818] text-lg mb-2 flex items-center gap-2">
-                      {cat.imageUrl && <span>{cat.imageUrl}</span>} {cat.name}
-                    </h4>
-                    {cat.subCategories && cat.subCategories.length > 0 ? (
-                      <ul className="list-disc pl-5 space-y-1 text-sm text-gray-600 font-medium">
-                        {cat.subCategories.map(sub => <li key={sub.id}>{sub.name}</li>)}
-                      </ul>
-                    ) : <p className="text-xs text-gray-400 italic">No sub-categories</p>}
+                  <div key={cat.id} className="border border-gray-200 rounded-sm p-4 bg-gray-50/50 flex flex-col justify-between hover:border-red-200 transition-colors">
+                    <div>
+                      <div className="flex justify-between items-start mb-4 border-b border-gray-200 pb-3">
+                        <div className="flex items-center gap-3">
+                          {cat.imageUrl && (
+                            cat.imageUrl.startsWith('http') ? (
+                              <img src={cat.imageUrl} alt={cat.name} className="w-12 h-12 object-cover rounded-md shadow-sm border border-gray-200 bg-white" />
+                            ) : (
+                              <span className="text-3xl">{cat.imageUrl}</span>
+                            )
+                          )}
+                          <h4 className="font-extrabold text-[#8b1818] text-lg leading-tight">{cat.name}</h4>
+                        </div>
+                        <button onClick={() => handleDeleteCategory(cat.id)} className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-full transition-colors" title="Delete Category">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {cat.subCategories && cat.subCategories.length > 0 ? (
+                        <ul className="list-disc pl-5 space-y-1 text-sm text-gray-600 font-medium">
+                          {cat.subCategories.map(sub => <li key={sub.id}>{sub.name}</li>)}
+                        </ul>
+                      ) : <p className="text-xs text-gray-400 italic">No sub-categories</p>}
+                    </div>
                   </div>
                 ))}
               </div>
