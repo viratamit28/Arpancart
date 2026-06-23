@@ -3,15 +3,19 @@ import axios from 'axios';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import TrendingBanner from '../components/TrendingBanner';
-import { Search, X, ChevronRight, Sparkles, Flame, Star, LayoutGrid, ArrowLeft } from 'lucide-react'; // 🔥 ArrowLeft added
+import { Search, X, ChevronRight, Sparkles, ArrowLeft, Filter } from 'lucide-react'; 
 
 const Shop = () => {
   const [allProducts, setAllProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
+  
+  // Category States
   const [categories, setCategories] = useState(['All']);
+  const [fullCategoriesData, setFullCategoriesData] = useState([]); // 🔥 Pura category data (with subcategories) store karne ke liye
   
   // Filter States
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [activeSubCategory, setActiveSubCategory] = useState(null); // 🔥 Sub-category tracking
   const [sortBy, setSortBy] = useState('default');
   
   // Loading & Error
@@ -46,7 +50,10 @@ const Shop = () => {
         setAllProducts(productsArray); 
         
         if (categoriesRes && categoriesRes.data?.success) {
-          const activeCategories = categoriesRes.data.data.filter(c => c.isActive !== false).map(c => c.name);
+          const fetchedCategories = categoriesRes.data.data;
+          setFullCategoriesData(fetchedCategories); // Pura data save kiya
+          
+          const activeCategories = fetchedCategories.filter(c => c.isActive !== false).map(c => c.name);
           setCategories(['All', ...activeCategories]);
         } else {
           const uniqueCategories = ['All', ...new Set(productsArray.map(p => p.categoryString || p.category?.name || p.category).filter(Boolean))];
@@ -66,8 +73,13 @@ const Shop = () => {
 
   // 2. Sync URL Context with State
   useEffect(() => {
-    if (urlCategory) setSelectedCategory(urlCategory);
-    else setSelectedCategory('All');
+    if (urlCategory) {
+      setSelectedCategory(urlCategory);
+    } else {
+      setSelectedCategory('All');
+    }
+    // Agar main category change ho, toh sub-category filter reset kar do
+    setActiveSubCategory(null);
   }, [urlCategory]);
 
   // 3. Apply Filters & Sort
@@ -102,36 +114,34 @@ const Shop = () => {
       });
     }
 
+    // 🔥 Sub-Category Filter (Left Sidebar click se)
+    if (activeSubCategory) {
+      result = result.filter(p => p.subCategoryId === activeSubCategory);
+    }
+
     // Sorting Filter
     const getSafePrice = (p) => (p.discountedPrice && p.discountedPrice > 0) ? p.discountedPrice : p.price;
     if (sortBy === 'price-low') result.sort((a, b) => getSafePrice(a) - getSafePrice(b));
     else if (sortBy === 'price-high') result.sort((a, b) => getSafePrice(b) - getSafePrice(a));
 
     setFilteredProducts(result);
-  }, [allProducts, searchQuery, selectedCategory, sortBy, isTrending, isPopular]);
+  }, [allProducts, searchQuery, selectedCategory, activeSubCategory, sortBy, isTrending, isPopular]);
 
   // 4. Handle Clicks
-  const handleSidebarCategoryClick = (cat) => {
+  const handleMainCategoryClick = (cat) => {
+    setActiveSubCategory(null); // Tab change karne par sub-category reset
     if (cat === 'All') navigate('/shop');
     else navigate(`/shop?category=${encodeURIComponent(cat)}`);
   };
 
   // 5. DYNAMIC HEADER CONFIGURATION
-  let pageHeader = {
-    title: "Puja Items & Puja Kits" // Default from your image
-  };
-
-  if (isTrending) {
-    pageHeader.title = "Trending Spiritual Essentials";
-  } else if (isPopular) {
-    pageHeader.title = "Most Loved Best Sellers";
-  } else if (urlCategory) {
-    pageHeader.title = `${urlCategory}`;
-  }
+  let pageHeader = { title: "Puja Items & Puja Kits" };
+  if (isTrending) pageHeader.title = "Trending Spiritual Essentials";
+  else if (isPopular) pageHeader.title = "Most Loved Best Sellers";
+  else if (urlCategory) pageHeader.title = `${urlCategory}`;
 
   // 6. SMART CATEGORY GROUPING LOGIC
   const shouldGroupByCategory = selectedCategory === 'All' && !isTrending && !isPopular && !searchQuery;
-
   const groupedProducts = {};
   if (shouldGroupByCategory) {
     categories.filter(c => c !== 'All').forEach(cat => {
@@ -143,9 +153,12 @@ const Shop = () => {
     });
   }
 
+  // 🔥 7. Find Current Category's Subcategories
+  const currentCategoryObj = fullCategoriesData.find(c => c.name.toLowerCase() === selectedCategory.toLowerCase());
+  const hasSubCategories = currentCategoryObj && currentCategoryObj.subCategories && currentCategoryObj.subCategories.length > 0;
+
   return (
     <div className="bg-[#fdfaf6] min-h-screen pb-12">
-      
       <style>
         {`
           @keyframes fadeUp {
@@ -160,11 +173,8 @@ const Shop = () => {
 
       <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 pt-8 md:pt-12">
         
-        {/* =========================================
-            🔥 NEW HEADER MATCHING YOUR IMAGE
-        ========================================= */}
+        {/* HEADER SECTION */}
         <div className="flex flex-col mb-8 animate-fade-up">
-          
           <div className="flex items-center gap-4 md:gap-6 mb-8">
             <button 
               onClick={() => navigate(-1)} 
@@ -177,9 +187,7 @@ const Shop = () => {
             </h1>
           </div>
 
-          {/* =========================================
-              🔥 NEW HORIZONTAL CATEGORY PILLS (TABS)
-          ========================================= */}
+          {/* HORIZONTAL CATEGORY PILLS (TABS) */}
           {(!isTrending && !isPopular) && (
             <div className="flex overflow-x-auto gap-3 md:gap-4 pb-2 hide-scrollbar w-full">
               {categories.map((cat, index) => {
@@ -187,7 +195,7 @@ const Shop = () => {
                 return (
                   <button
                     key={index}
-                    onClick={() => handleSidebarCategoryClick(cat)}
+                    onClick={() => handleMainCategoryClick(cat)}
                     className={`px-6 md:px-8 py-2.5 md:py-3 rounded-full text-sm md:text-[15px] font-semibold whitespace-nowrap transition-all duration-300 border flex-shrink-0 ${
                       isActive 
                         ? 'bg-[#7a1a1a] text-white border-[#7a1a1a] shadow-md' 
@@ -213,107 +221,141 @@ const Shop = () => {
         )}
 
         {/* =========================================
-            PRODUCTS AREA (Now Full Width)
+            🔥 MAIN LAYOUT (SIDEBAR + PRODUCTS GRID)
         ========================================= */}
-        <div className="w-full animate-fade-up" style={{ animationDelay: '0.1s' }}>
+        <div className="flex flex-col lg:flex-row gap-8 animate-fade-up" style={{ animationDelay: '0.1s' }}>
           
-          {/* Top Toolbar */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 md:p-5 rounded-xl shadow-[0_2px_15px_rgba(0,0,0,0.03)] border border-orange-50 mb-8 gap-4">
-            <div className="font-bold text-gray-600 text-sm">
-              Showing <span className="text-[#8b1818] text-lg">{filteredProducts.length}</span> products
-            </div>
+          {/* LEFT SIDEBAR (Sub-Category Filters) - Appears only if subcategories exist */}
+          {hasSubCategories && !isTrending && !isPopular && (
+            <aside className="w-full lg:w-1/4 xl:w-1/5 flex-shrink-0">
+              <div className="bg-white p-5 rounded-2xl shadow-[0_2px_15px_rgba(0,0,0,0.03)] border border-orange-50 sticky top-24">
+                <h3 className="font-extrabold text-gray-800 uppercase tracking-wide mb-4 flex items-center gap-2 text-sm">
+                  <Filter className="w-4 h-4 text-[#f7941d]"/> Filters by Kit
+                </h3>
+                
+                <ul className="space-y-2">
+                  <li>
+                    <button 
+                      onClick={() => setActiveSubCategory(null)}
+                      className={`w-full text-left px-4 py-2.5 text-sm font-bold rounded-lg transition-colors ${activeSubCategory === null ? 'bg-[#fcfaf5] text-[#8b1818] border border-[#8b1818]/20' : 'text-gray-600 hover:bg-gray-50 border border-transparent'}`}
+                    >
+                      View All {selectedCategory}
+                    </button>
+                  </li>
+                  
+                  {currentCategoryObj.subCategories.map(sub => (
+                    <li key={sub.id}>
+                      <button 
+                        onClick={() => setActiveSubCategory(sub.id)}
+                        className={`w-full text-left px-4 py-2.5 text-sm font-bold rounded-lg transition-colors ${activeSubCategory === sub.id ? 'bg-[#f7941d] text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50 border border-transparent'}`}
+                      >
+                        {sub.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </aside>
+          )}
+
+          {/* RIGHT SIDE (Products Area) */}
+          <div className="flex-1 w-full">
             
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <label className="font-bold text-gray-600 text-xs uppercase whitespace-nowrap">Sort By:</label>
-              <select 
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full sm:w-auto bg-[#fdfaf6] border border-gray-200 text-gray-800 font-bold text-sm rounded-lg focus:ring-[#8b1818] focus:border-[#8b1818] block p-2.5 outline-none cursor-pointer"
-              >
-                <option value="default">Recommended</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-              </select>
+            {/* Top Toolbar */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 md:p-5 rounded-xl shadow-[0_2px_15px_rgba(0,0,0,0.03)] border border-orange-50 mb-8 gap-4">
+              <div className="font-bold text-gray-600 text-sm">
+                Showing <span className="text-[#8b1818] text-lg">{filteredProducts.length}</span> products
+              </div>
+              
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <label className="font-bold text-gray-600 text-xs uppercase whitespace-nowrap">Sort By:</label>
+                <select 
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full sm:w-auto bg-[#fdfaf6] border border-gray-200 text-gray-800 font-bold text-sm rounded-lg focus:ring-[#8b1818] focus:border-[#8b1818] block p-2.5 outline-none cursor-pointer"
+                >
+                  <option value="default">Recommended</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                </select>
+              </div>
             </div>
-          </div>
 
-          {/* LOADING STATE */}
-          {loading && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                <div key={n} className="bg-white rounded-2xl h-[340px] animate-pulse border border-orange-50 shadow-sm">
-                  <div className="w-full h-48 bg-orange-50/50 rounded-t-2xl"></div>
-                  <div className="p-5 space-y-4">
-                    <div className="h-4 bg-gray-200 w-3/4 rounded-sm"></div>
-                    <div className="h-3 bg-gray-100 w-1/2 rounded-sm"></div>
-                    <div className="h-10 bg-gray-200 mt-4 rounded-full"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* ERROR STATE */}
-          {error && (
-            <div className="bg-red-50 text-red-600 font-bold p-6 rounded-xl border border-red-100 text-center">
-              {error}
-            </div>
-          )}
-
-          {/* EMPTY RESULTS STATE */}
-          {!loading && !error && filteredProducts.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 px-4 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-orange-50 text-center">
-              <X className="w-16 h-16 text-gray-300 mb-4" />
-              <p className="text-gray-800 text-2xl font-extrabold mb-2">No items found</p>
-              <p className="text-gray-500 font-medium">
-                {searchQuery ? `We couldn't find anything matching "${searchQuery}".` : "This collection is currently empty."}
-              </p>
-              <button onClick={() => { setSelectedCategory('All'); navigate('/shop'); }} className="mt-6 bg-[#8b1818] text-white font-extrabold py-3 px-8 rounded-full transition-colors uppercase tracking-wider text-sm shadow-md hover:shadow-lg active:scale-95">
-                View All Products
-              </button>
-            </div>
-          )}
-
-          {/* =========================================
-              PRODUCT RENDERING (Grouped vs Grid)
-          ========================================= */}
-          {!loading && !error && filteredProducts.length > 0 && (
-            <>
-              {shouldGroupByCategory ? (
-                // 🔥 GROUPED BY CATEGORY VIEW
-                <div className="space-y-12">
-                  {Object.keys(groupedProducts).map((catName, idx) => (
-                    <div key={idx} className="bg-white p-4 md:p-6 rounded-2xl border border-orange-50 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-                      <div className="flex justify-between items-end border-b border-gray-100 pb-4 mb-6">
-                        <h2 className="text-xl md:text-2xl font-extrabold text-[#8b1818] flex items-center gap-2">
-                          <Sparkles className="w-5 h-5 text-[#f7941d]"/> {catName}
-                        </h2>
-                        <button onClick={() => navigate(`/shop?category=${encodeURIComponent(catName)}`)} className="text-sm font-bold text-[#f7941d] hover:text-[#8b1818] transition-colors flex items-center gap-1 bg-orange-50 px-3 py-1.5 rounded-full">
-                          See All <ChevronRight className="w-4 h-4"/>
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                        {groupedProducts[catName].slice(0, 4).map(product => (
-                          <ProductCard key={product.id || product._id} product={product} />
-                        ))}
-                      </div>
+            {/* LOADING STATE */}
+            {loading && (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                  <div key={n} className="bg-white rounded-2xl h-[340px] animate-pulse border border-orange-50 shadow-sm">
+                    <div className="w-full h-48 bg-orange-50/50 rounded-t-2xl"></div>
+                    <div className="p-5 space-y-4">
+                      <div className="h-4 bg-gray-200 w-3/4 rounded-sm"></div>
+                      <div className="h-3 bg-gray-100 w-1/2 rounded-sm"></div>
+                      <div className="h-10 bg-gray-200 mt-4 rounded-full"></div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                // 🔥 STANDARD GRID VIEW (Using 4 columns for desktop since sidebar is gone)
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                  {filteredProducts.map((product) => (
-                    <ProductCard key={product.id || product._id} product={product} />
-                  ))}
-                </div>
-              )}
-            </>
-          )}
+                  </div>
+                ))}
+              </div>
+            )}
 
+            {/* ERROR STATE */}
+            {error && (
+              <div className="bg-red-50 text-red-600 font-bold p-6 rounded-xl border border-red-100 text-center">
+                {error}
+              </div>
+            )}
+
+            {/* EMPTY RESULTS STATE */}
+            {!loading && !error && filteredProducts.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-20 px-4 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-orange-50 text-center">
+                <X className="w-16 h-16 text-gray-300 mb-4" />
+                <p className="text-gray-800 text-2xl font-extrabold mb-2">No items found</p>
+                <p className="text-gray-500 font-medium">
+                  {searchQuery ? `We couldn't find anything matching "${searchQuery}".` : "No products available in this section."}
+                </p>
+                <button onClick={() => { setActiveSubCategory(null); setSelectedCategory('All'); navigate('/shop'); }} className="mt-6 bg-[#8b1818] text-white font-extrabold py-3 px-8 rounded-full transition-colors uppercase tracking-wider text-sm shadow-md hover:shadow-lg active:scale-95">
+                  View All Products
+                </button>
+              </div>
+            )}
+
+            {/* PRODUCT RENDERING */}
+            {!loading && !error && filteredProducts.length > 0 && (
+              <>
+                {shouldGroupByCategory ? (
+                  // GROUPED BY CATEGORY VIEW
+                  <div className="space-y-12">
+                    {Object.keys(groupedProducts).map((catName, idx) => (
+                      <div key={idx} className="bg-white p-4 md:p-6 rounded-2xl border border-orange-50 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                        <div className="flex justify-between items-end border-b border-gray-100 pb-4 mb-6">
+                          <h2 className="text-xl md:text-2xl font-extrabold text-[#8b1818] flex items-center gap-2">
+                            <Sparkles className="w-5 h-5 text-[#f7941d]"/> {catName}
+                          </h2>
+                          <button onClick={() => navigate(`/shop?category=${encodeURIComponent(catName)}`)} className="text-sm font-bold text-[#f7941d] hover:text-[#8b1818] transition-colors flex items-center gap-1 bg-orange-50 px-3 py-1.5 rounded-full">
+                            See All <ChevronRight className="w-4 h-4"/>
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                          {groupedProducts[catName].slice(0, 4).map(product => (
+                            <ProductCard key={product.id || product._id} product={product} />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  // STANDARD GRID VIEW (Uses 3 cols on large screens because sidebar takes 1 col)
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6">
+                    {filteredProducts.map((product) => (
+                      <ProductCard key={product.id || product._id} product={product} />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Need Guidance Box (Moved to bottom) */}
+        {/* Need Guidance Box */}
         {!loading && !error && (
            <div className="mt-12 bg-[#8b1818] md:bg-gradient-to-r md:from-[#8b1818] md:to-[#6e1313] p-6 md:p-10 rounded-2xl shadow-lg text-white flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
