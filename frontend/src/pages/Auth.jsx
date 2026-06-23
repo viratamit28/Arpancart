@@ -119,7 +119,7 @@ const Auth = () => {
     setLoading(true);
     try {
       const response = await axios.post(`${API_BASE_URL}/auth/forgot-password`, { mobileNumber: resetMobile });
-      setSuccessMsg(`OTP sent successfully! (Demo OTP: ${response.data.demoOtp})`); // Remove demoOtp in production
+      setSuccessMsg(`OTP sent successfully! ( OTP: ${response.data.demoOtp})`); // Remove demoOtp in production
       setForgotStep(2); // Move to Step 2
     } catch (err) {
       setError(err.response?.data?.message || "Failed to send OTP. Please check the number.");

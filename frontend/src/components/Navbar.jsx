@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Search, ShoppingCart, User, LogOut, Phone, Mail, Menu, X, CheckCircle, MessageCircle, CalendarClock } from 'lucide-react'; 
-import logo from '../assets/logo.png'; 
+import logo from '../assets/logo 2.png'; 
 import { CartContext } from '../context/CartContext';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
